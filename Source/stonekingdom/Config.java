@@ -13,6 +13,9 @@ public class Config {
 	public static boolean SERVER_DEBUG = true; //True = debugging mode TURN OFF BEFORE LAUNCH
 	public static int PORT_NUMBER = 30712;
 	public static String SERVER_NAME = "Stone-Kingdom";
+	public static void welcome(Client c){
+		c.sendMessage("Welcome to Stone-Kingdom V1");
+	}
 	
 //Starting Section (for new players!)
 	//Location = Ardy
