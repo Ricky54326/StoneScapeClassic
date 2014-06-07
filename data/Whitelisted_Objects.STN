@@ -1,0 +1,4 @@
+/*All objects that will respond to clicks in StoneScape
+If an item is not whitelisted it will error out. This 100% stops cheat clients from false clicking and is the BEST object security
+*/
+//OBJECT TYPE - OBJECT ID - OBJX- OBJY
