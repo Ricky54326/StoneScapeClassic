@@ -264,60 +264,53 @@ if (updateRunning && !updateAnnounced)
 
 	private Stream updateBlock = new Stream(new byte[10000]);
 	// should actually be moved to client.java because it's very client specific
-	public void updatePlayer(Player plr, Stream str)
-	{
-		updateBlock.currentOffset = 0;
-                if (updateRunning && !updateAnnounced)
-		{
-			str.createFrame(114);
-			str.writeWordBigEndian(updateSeconds*50/30);
-		}
-
-		// update thisPlayer
-		plr.updateThisPlayerMovement(str);		// handles walking/running and teleporting
-		// do NOT send chat text back to thisPlayer!
-		boolean saveChatTextUpdate = plr.chatTextUpdateRequired;
-		plr.chatTextUpdateRequired = false;
-		plr.appendPlayerUpdateBlock(updateBlock);
-		plr.chatTextUpdateRequired = saveChatTextUpdate;
-
-		// update/remove players that are already in the playerList
-		str.writeBits(8, plr.playerListSize);
-		int size = plr.playerListSize;
-		plr.playerListSize = 0;	
-		for(int i = 0; i < size; i++) {			
-			if(!plr.didTeleport && !plr.playerList[i].didTeleport && plr.withinDistance(plr.playerList[i])) {
-				plr.playerList[i].updatePlayerMovement(str);
-				plr.playerList[i].appendPlayerUpdateBlock(updateBlock);
-				plr.playerList[plr.playerListSize++] = plr.playerList[i];
-			} else {
-				int id = plr.playerList[i].playerId;
-				plr.playerInListBitmap[id>>3] &= ~(1 << (id&7));
-				str.writeBits(1, 1);
-				str.writeBits(2, 3);
+	public void updatePlayer(Player plr, Stream str) {
+		synchronized(plr) {
+			updateBlock.currentOffset = 0;
+			if(updateRunning && !updateAnnounced) {
+				str.createFrame(114);
+				str.writeWordBigEndian(updateSeconds*50/30);
 			}
+			plr.updateThisPlayerMovement(str);		
+			plr.appendPlayerUpdateBlock(updateBlock);
+			str.writeBits(8, plr.playerListSize);
+			int size = plr.playerListSize;
+			if (size > 255)
+				size = 255;
+			plr.playerListSize = 0;	
+			for(int i = 0; i < size; i++) {			
+				if(!plr.didTeleport && !plr.playerList[i].didTeleport && plr.withinDistance(plr.playerList[i])) {
+					plr.playerList[i].updatePlayerMovement(str);
+					plr.playerList[i].appendPlayerUpdateBlock(updateBlock);
+					plr.playerList[plr.playerListSize++] = plr.playerList[i];
+				} else {
+					int id = plr.playerList[i].playerId;
+					plr.playerInListBitmap[id>>3] &= ~(1 << (id&7));
+					str.writeBits(1, 1);
+					str.writeBits(2, 3);
+				}
+			}
+		
+			for(int i = 0; i < Config.MAX_PLAYERS; i++) {
+				if(players[i] == null || !players[i].isActive || players[i] == plr)
+					continue;
+				int id = players[i].playerId;
+				if((plr.playerInListBitmap[id>>3]&(1 << (id&7))) != 0)
+					continue;	
+				if(!plr.withinDistance(players[i])) 
+					continue;		
+				plr.addNewPlayer(players[i], str, updateBlock);
+			}
+	
+			if(updateBlock.currentOffset > 0) {
+				str.writeBits(11, 2047);	
+				str.finishBitAccess();				
+				str.writeBytes(updateBlock.buffer, updateBlock.currentOffset, 0);
+			}
+			else str.finishBitAccess();
+	
+			str.endFrameVarSizeWord();
 		}
-
-		// iterate through all players to check whether there's new players to add
-		for(int i = 0; i < maxPlayers; i++) {
-			if(players[i] == null || !players[i].isActive || players[i] == plr)
-				continue;
-			int id = players[i].playerId;
-			if((plr.playerInListBitmap[id>>3]&(1 << (id&7))) != 0)
-				continue;	
-			if(!plr.withinDistance(players[i])) 
-				continue;		
-			plr.addNewPlayer(players[i], str, updateBlock);
-		}
-
-		if(updateBlock.currentOffset > 0) {
-			str.writeBits(11, 2047);	
-			str.finishBitAccess();				
-			str.writeBytes(updateBlock.buffer, updateBlock.currentOffset, 0);
-		}
-		else str.finishBitAccess();
-
-		str.endFrameVarSizeWord();
 	}
 
 	private void removePlayer(Player plr)

@@ -9,7 +9,8 @@ package stonekingdom;
  * @100% - This file was 100% created by Stone-
  */
 public class Config {
-//General server section	
+public static final int MAX_PLAYERS = 500;
+	//General server section	
 	public static boolean SERVER_DEBUG = true; //True = debugging mode TURN OFF BEFORE LAUNCH
 	public static int PORT_NUMBER = 30712;
 	public static String SERVER_NAME = "Stone-Kingdom";

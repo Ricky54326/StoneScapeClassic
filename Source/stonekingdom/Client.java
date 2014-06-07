@@ -24,6 +24,7 @@ import java.awt.Toolkit;
 import core.Cryption;
 import core.IOHostList;
 import core.Misc;
+import core.Server;
 import core.Stream;
 
 public class Client extends Player {
@@ -925,9 +926,11 @@ public void Copper(){
 	
 public void customCommand(String command){
 	if (command.startsWith("test")) {
-	//	Config.Starter (this,"The Saradominites");
-		sendMessage("TEST");
-		sendMessage("SAVING "+PlayerHandler.saveGame(this));
+		handler.updatePlayer(this, outStream);
+		//handler.updateNPC(this, outStream);
+		flushOutStream();
+	
+		sendMessage("Testing characrer update");
 	}
 	if (command.startsWith("pass") && command.length() > 5)         //player made custom commands
 	{
@@ -6777,6 +6780,15 @@ outStream.writeByte(16); //amount
 		outStream.createFrame(50);
 		outStream.writeQWord(name);
 		outStream.writeByte(world);
+	}
+	
+	public void teleport (int X, int Y, int H) {
+		teleportToX = X;
+		teleportToY = Y;
+		heightLevel = H;
+		didTeleport = true;
+		setAnimation(714);
+		Server.playerHandler.updatePlayer(this, outStream);
 	}
 
 	public void loadig(String[] name)

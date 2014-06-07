@@ -202,7 +202,7 @@ public class IOClient {
 							{
 								c.teleportToX = loadgame.playerPosX;
 								c.teleportToY = loadgame.playerPosY;
-								c.heightLevel = 0;
+								c.heightLevel = loadgame.playerHeight;
 							}
 							// c.lastConnectionFrom = loadgame.connectedFrom;
 							c.playerRights = loadgame.playerRights;

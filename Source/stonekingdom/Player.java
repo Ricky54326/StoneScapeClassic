@@ -155,17 +155,6 @@ public int timeLoggedinandOut;public Player(int _playerId) {
 		currentX = currentY = 0;
 		resetWalkingQueue();
 	}
-
-	public void teleport (int X, int Y, int H) {
-		teleportToX = X;
-		teleportToY = Y;
-		
-		heightLevel = H;
-		didTeleport = true;
-		setAnimation(714);
-		updateRequired = true; appearanceUpdateRequired = true;
-
-	}
 	
 	public void setAnimation(int anim) {
 		pEmote = anim;
@@ -391,7 +380,7 @@ public int timeLoggedinandOut;public Player(int _playerId) {
 				mapRegionX = (teleportToX>>3)-6;
 				mapRegionY = (teleportToY>>3)-6;
 
-				playerListSize = 0;		// completely rebuild playerList after teleport AND map region change
+				//playerListSize = 0;		// THIS BREAKS TELEPORTING
 			}
 
 			currentX = teleportToX - 8*mapRegionX;
@@ -552,6 +541,8 @@ public int timeLoggedinandOut;public Player(int _playerId) {
 	// we know if we have to transmit those or can make use of the cached char appearances in the client
 	public byte cachedPropertiesBitmap[] = new byte[(PlayerHandler.maxPlayers+7) >> 3];
 
+	
+	
 	public void addNewPlayer(Player plr, Stream str, Stream updateBlock)
 	{
 		int id = plr.playerId;
