@@ -512,18 +512,23 @@ WORLDMAP 2: (not-walk able places)
 		String token2_2 = "";
 		String[] token3 = new String[10];
 		boolean EndOfFile = false;
-		int ReadMode = 0;
-		BufferedReader characterfile = null;
+		BufferedReader Spawn = null;
 		try {
-			characterfile = new BufferedReader(new FileReader("./"+FileName));
+			Spawn = new BufferedReader(new FileReader("./"+FileName));
 		} catch(FileNotFoundException fileex) {
 			Misc.println(FileName+": file not found.");
 			return false;
 		}
 		try {
-			line = characterfile.readLine();
+			line = Spawn.readLine();
 		} catch(IOException ioexception) {
 			Misc.println(FileName+": error loading file.");
+			try {
+				Spawn.close();
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
 			return false;
 		}
 		while(EndOfFile == false && line != null) {
@@ -545,15 +550,14 @@ WORLDMAP 2: (not-walk able places)
 				}
 			} else {
 				if (line.equals("[ENDOFSPAWNLIST]")) {
-					try { characterfile.close(); } catch(IOException ioexception) { }
-					return true;
+					try { Spawn.close(); } catch(IOException ioexception) { }
 				}
 			}
 			try {
-				line = characterfile.readLine();
+				line = Spawn.readLine();
 			} catch(IOException ioexception1) { EndOfFile = true; }
 		}
-		try { characterfile.close(); } catch(IOException ioexception) { }
+		try { Spawn.close(); } catch(IOException ioexception) { }
 		return false;
 	}
 
@@ -575,18 +579,23 @@ WORLDMAP 2: (not-walk able places)
 		String token2_2 = "";
 		String[] token3 = new String[10];
 		boolean EndOfFile = false;
-		int ReadMode = 0;
-		BufferedReader characterfile = null;
+		BufferedReader NPCList = null;
 		try {
-			characterfile = new BufferedReader(new FileReader(FileName));
+			NPCList = new BufferedReader(new FileReader(FileName));
 		} catch(FileNotFoundException fileex) {
 			Misc.println(FileName+": file not found.");
 			return false;
 		}
 		try {
-			line = characterfile.readLine();
+			line = NPCList.readLine();
 		} catch(IOException ioexception) {
 			Misc.println(FileName+": error loading file.");
+			try {
+				NPCList.close();
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
 			return false;
 		}
 		while(EndOfFile == false && line != null) {
@@ -608,82 +617,17 @@ WORLDMAP 2: (not-walk able places)
 				}
 			} else {
 				if (line.equals("[ENDOFNPCLIST]")) {
-					try { characterfile.close(); } catch(IOException ioexception) { }
-					return true;
+					try { NPCList.close(); } catch(IOException ioexception) { }
 				}
 			}
 			try {
-				line = characterfile.readLine();
+				line = NPCList.readLine();
 			} catch(IOException ioexception1) { EndOfFile = true; }
 		}
-		try { characterfile.close(); } catch(IOException ioexception) { }
+		try { NPCList.close(); } catch(IOException ioexception) { }
 		return false;
 	}
-
-	public boolean loadNPCDrops(String FileName) {
-		String line = "";
-		String token = "";
-		String token2 = "";
-		String token2_2 = "";
-		String[] token3 = new String[10];
-		boolean EndOfFile = false;
-		int ReadMode = 0;
-		BufferedReader characterfile = null;
-		try {
-			characterfile = new BufferedReader(new FileReader(FileName));
-		} catch(FileNotFoundException fileex) {
-			Misc.println(FileName+": file not found.");
-			return false;
-		}
-		try {
-			line = characterfile.readLine();
-		} catch(IOException ioexception) {
-			Misc.println(FileName+": error loading file.");
-			return false;
-		}
-		while(EndOfFile == false && line != null) {
-			line = line.trim();
-			int spot = line.indexOf("=");
-			if (spot > -1) {
-				token = line.substring(0, spot);
-				token = token.trim();
-				token2 = line.substring(spot + 1);
-				token2 = token2.trim();
-				token2_2 = token2.replaceAll("\t\t", "\t");
-				token2_2 = token2_2.replaceAll("\t\t", "\t");
-				token2_2 = token2_2.replaceAll("\t\t", "\t");
-				token2_2 = token2_2.replaceAll("\t\t", "\t");
-				token2_2 = token2_2.replaceAll("\t\t", "\t");
-				token3 = token2_2.split("\t");
-				if (token.equals("npcdrop")) {
-					int[] Items = new int[100];
-					int[] ItemsN = new int[100];
-					for (int i = 0; i < ((token3.length - 2) / 2); i++) {
-						if (token3[(2 + (i * 2))] != null) {
-							Items[i] = Integer.parseInt(token3[(2 + (i * 2))]);
-							ItemsN[i] = Integer.parseInt(token3[(3 + (i * 2))]);
-						} else {
-							break;
-						}
-					}
-					newNPCDrop(Integer.parseInt(token3[0]),Integer.parseInt(token3[1]), Items, ItemsN);
-				}
-			} else {
-				if (line.equals("[ENDOFNPCDROPLIST]")) {
-					try { characterfile.close(); } catch(IOException ioexception) { }
-					return true;
-				}
-			}
-			try {
-				line = characterfile.readLine();
-			} catch(IOException ioexception1) { EndOfFile = true; }
-		}
-		try { characterfile.close(); } catch(IOException ioexception) { }
-		return false;
-	}
-
-
-
+	
 	public void println(String str) {
 		System.out.println(str);
 	}
