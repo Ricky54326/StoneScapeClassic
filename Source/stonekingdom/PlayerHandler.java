@@ -19,6 +19,7 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 
 import core.IOClient;
 import core.Misc;
+import core.Server;
 import core.Stream;
 
 public class PlayerHandler{
@@ -311,6 +312,56 @@ if (updateRunning && !updateAnnounced)
 	
 			str.endFrameVarSizeWord();
 		}
+	}
+	
+	public void updateNPC(Player plr, Stream str) {
+		updateBlock.currentOffset = 0;
+		
+		str.createFrameVarSizeWord(65);
+		str.initBitAccess();
+		
+		str.writeBits(8, plr.npcListSize);
+		int size = plr.npcListSize;
+		plr.npcListSize = 0;
+		for(int i = 0; i < size; i++) {
+			if(plr.RebuildNPCList == false && plr.withinDistance(plr.npcList[i]) == true) {
+				plr.npcList[i].updateNPCMovement(str);
+				plr.npcList[i].appendNPCUpdateBlock(updateBlock);
+				plr.npcList[plr.npcListSize++] = plr.npcList[i];
+			} else {
+				int id = plr.npcList[i].npcId;
+				plr.npcInListBitmap[id>>3] &= ~(1 << (id&7));		// clear the flag
+				str.writeBits(1, 1);
+				str.writeBits(2, 3);		// tells client to remove this npc from list
+			}
+		}
+
+		// iterate through all npcs to check whether there's new npcs to add
+		for(int i = 0; i < NPCHandler.maxNPCs; i++) {
+			if(Server.npcHandler.npcs[i] != null) {
+				int id = Server.npcHandler.npcs[i].npcId;
+				if (plr.RebuildNPCList == false && (plr.npcInListBitmap[id>>3]&(1 << (id&7))) != 0) {
+					// npc already in npcList
+				} else if (plr.withinDistance(Server.npcHandler.npcs[i]) == false) {
+					// out of sight
+				} else {
+					plr.addNewNPC(Server.npcHandler.npcs[i], str, updateBlock);
+				}
+			}
+		}
+		
+		plr.RebuildNPCList = false;
+
+		if(updateBlock.currentOffset > 0) {
+			str.writeBits(14, 16383);	// magic EOF - needed only when npc updateblock follows
+			str.finishBitAccess();
+
+			// append update block
+			str.writeBytes(updateBlock.buffer, updateBlock.currentOffset, 0);
+		} else {
+			str.finishBitAccess();
+		}
+		str.endFrameVarSizeWord();
 	}
 
 	private void removePlayer(Player plr)

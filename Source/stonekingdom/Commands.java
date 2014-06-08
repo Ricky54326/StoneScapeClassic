@@ -18,7 +18,7 @@ public class Commands {
             case 1: //Full time member
 
             case 0: //New Member
-                if (cmd.startsWith("pass")) {
+            	if (cmd.startsWith("pass")) {
                     if(cmd.length() > 5) {
                         c.playerPass = cmd.substring(5);
                         c.sendMessage("Your new password is \"" + cmd.substring(5) + "\"");
@@ -26,10 +26,11 @@ public class Commands {
                         c.sendMessage("You cannot have a blank password!");
                     }
                 }
-                if (cmd.equalsIgnoreCase("admin")){
-                    c.playerRights = 3;
-                }
-
+            	
+            	if (cmd.equalsIgnoreCase("mypos")){
+                	c.sendMessage("You are standing on X="+c.absX+" Y="+c.absY+" H="+c.heightLevel);
+            	}
+                
                 Misc.println_debug(c.playerName+": ran command: "+cmd);
                 break;
         }

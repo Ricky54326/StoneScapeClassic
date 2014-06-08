@@ -149,7 +149,8 @@ public int timeLoggedinandOut;public Player(int _playerId) {
 	void destruct() {
 		playerListSize = 0;
 		for(int i = 0; i < maxPlayerListSize; i++) playerList[i] = null;
-
+		npcListSize = 0;
+		for(int i = 0; i < maxNPCListSize; i++) npcList[i] = null;
 		absX = absY = -1;
 		mapRegionX = mapRegionY = -1;
 		currentX = currentY = 0;
@@ -162,6 +163,8 @@ public int timeLoggedinandOut;public Player(int _playerId) {
 		updateRequired = true; appearanceUpdateRequired = true;
 	}
 	
+	public boolean isNpc;
+	public int npcId;
 	public boolean initialized = false, disconnected = false;
 	public boolean isActive = false;
 	public boolean isKicked = false;
@@ -188,6 +191,8 @@ public int timeLoggedinandOut;public Player(int _playerId) {
 	public int tradeWaitingTime=0;
 	public boolean tradeAccepted=false;
 
+	
+	
 	public int hitDiff = 0;
 	public boolean hitUpdateRequired = false;
 
@@ -246,12 +251,12 @@ public int timeLoggedinandOut;public Player(int _playerId) {
 	public int playerFeet=10;
 	public int playerRing=12;
 	public int playerArrows=13;
-
+	public int DirectionCount = 0;
 	public int[] playerLevel = new int[25];
 	public int[] playerXP = new int[25];
 	public int currentHealth = playerLevel[3];
 	public int maxHealth = playerLevel[3];
-
+	public boolean RebuildNPCList = false;
 	// the list of players currently seen by thisPlayer
 	// this has to be remembered because the client will build up exactly the same list
 	// and will be used on subsequent player movement update packets for efficiency
@@ -268,6 +273,12 @@ public int timeLoggedinandOut;public Player(int _playerId) {
 	{
 		if(heightLevel != otherPlr.heightLevel) return false;
 		int deltaX = otherPlr.absX-absX, deltaY = otherPlr.absY-absY;
+		return deltaX <= 15 && deltaX >= -16 && deltaY <= 15 && deltaY >= -16;
+	}
+	public boolean withinDistance(NPC npc) {
+		if (heightLevel != npc.heightLevel) return false;
+		if (npc.NeedRespawn == true) return false;
+		int deltaX = npc.absX-absX, deltaY = npc.absY-absY;
 		return deltaX <= 15 && deltaX >= -16 && deltaY <= 15 && deltaY >= -16;
 	}
 
@@ -291,15 +302,48 @@ public int timeLoggedinandOut;public Player(int _playerId) {
 	public boolean isRunning = false;
 	public int teleportToX = -1, teleportToY = -1;	// contain absolute x/y coordinates of destination we want to teleport to
 
+	// the list of npcs currently seen by thisPlayer
+	// this has to be remembered because the client will build up exactly the same list
+	// and will be used on subsequent player movement update packets for efficiency
+	public final static int maxNPCListSize = NPCHandler.maxNPCs;
+	public static boolean IsDead = false;
+	public NPC npcList[] = new NPC[maxNPCListSize];
+	public int npcListSize = 0;
+	// bit at position npcId is set to 1 incase player is currently in playerList
+	public byte npcInListBitmap[] = new byte[(NPCHandler.maxNPCs+7) >> 3];
+	
 	public int existingNPCs = 0;
 	public int npcArray_idx = 0;
 
 	public NPC npcArray[] = new NPC[100];
 	
+	
+	public void addNewNPC(NPC npc, Stream str, Stream updateBlock)
+	{
+		int id = npc.npcId;
+		npcInListBitmap[id >> 3] |= 1 << (id&7);	// set the flag
+		npcList[npcListSize++] = npc;
 
+		str.writeBits(14, id);	// client doesn't seem to like id=0
+		
+		int z = npc.absY-absY;
+		if(z < 0) z += 32;
+		str.writeBits(5, z);	// y coordinate relative to thisPlayer
+		z = npc.absX-absX;
+		if(z < 0) z += 32;
+		str.writeBits(5, z);	// x coordinate relative to thisPlayer
+
+		str.writeBits(1, 0); //something??
+		str.writeBits(12, npc.npcType);
+		
+		boolean savedUpdateRequired = npc.updateRequired;
+		npc.updateRequired = true;
+		npc.appendNPCUpdateBlock(updateBlock);
+		npc.updateRequired = savedUpdateRequired;	
+		str.writeBits(1, 1); // update required
+	}
 	
-	
-	
+	/*
 	public void addNPC(NPC npc)
 	{
 		npcArray[npc.idx] = new NPC(npc.ID, npc.absX, npc.absY, npc.heightLevel, npc.idx);
@@ -312,7 +356,7 @@ public int timeLoggedinandOut;public Player(int _playerId) {
 	{
 		npcArray[npcidx] = null;
 		existingNPCs--;
-	}
+	}*/
 
 	public void resetWalkingQueue()
 	{
@@ -597,151 +641,155 @@ public int timeLoggedinandOut;public Player(int _playerId) {
 		// cape, apron, amulet... the remaining things...
 
 ///////////////////////////////////////AAAAA///////////////////////////////////
-
-			if (playerEquipment[playerHat] > 1)
-				playerProps.writeWord(0x200 + playerEquipment[playerHat]);
-			else
-				playerProps.writeByte(0);
-
-			if (playerEquipment[playerCape] > 1)
-				playerProps.writeWord(0x200 + playerEquipment[playerCape]);
-			else
-				playerProps.writeByte(0);
-
-			if (playerEquipment[playerAmulet] > 1)
-				playerProps.writeWord(0x200 + playerEquipment[playerAmulet]);
-			else
-				playerProps.writeByte(0);
-
-
-			if (playerEquipment[playerWeapon] > 1)
-				playerProps.writeWord(0x200 + playerEquipment[playerWeapon]);
-			else
-				playerProps.writeByte(0);
-
-			if (playerEquipment[playerChest] > 1)
-				playerProps.writeWord(0x200 + playerEquipment[playerChest]);
-			else
-				playerProps.writeWord(0x100+pTorso);
-
-			if (playerEquipment[playerShield] > 1)
-				playerProps.writeWord(0x200 + playerEquipment[playerShield]);
-			else
-				playerProps.writeByte(0);
-
-			if (!Item.isPlate(playerEquipment[playerChest]))
-				playerProps.writeWord(0x100+pArms);
-			else
-				playerProps.writeByte(0);
-
-			if (playerEquipment[playerLegs] > 1)
-				playerProps.writeWord(0x200 + playerEquipment[playerLegs]);
-			else
-				playerProps.writeWord(0x100+pLegs);
-
-			if (!Item.isFullHelm(playerEquipment[playerHat]) && !Item.isFullMask(playerEquipment[playerHat]))
-				playerProps.writeWord(0x100 + pHead);		// head
-			else
-				playerProps.writeByte(0);
-
-			if (playerEquipment[playerHands] > 1)
-				playerProps.writeWord(0x200 + playerEquipment[playerHands]);
-			else
-				playerProps.writeWord(0x100+pHands);
-
-			if (playerEquipment[playerFeet] > 1)
-				playerProps.writeWord(0x200 + playerEquipment[playerFeet]);
-			else playerProps.writeWord(0x100+pFeet);
-
-		playerProps.writeByte(0);
-
-/*
-[3204]: name="Dragon halberd"
-[4087]: name="Dragon platelegs"
-[4585]: name="Dragon plateskirt"
-[4587]: name="Dragon scimitar"
-[1187]: name="Dragon sq shield"
-[1664]: name="Dragon necklace"
-[3140]: name="Dragon chainbody"
-*/
-/*
-0-9: male head
-10-17: male beard
-18-25: male torso
-26-32: male arms
-33-35: male hands
-36-41: male legs
-42-44: male feet
-
-45-55: fem head
-56-60: fem torso
-61-66: fem arms
-67-69: fem hands
-70-78: fem legs
-79-81: fem feet
-82-83: some weird wagon???
-*/
-
-		if (playerName.equalsIgnoreCase("RedArray"))
-		{
-			/*if (updateNPCModel == -1) 
-			{
-				playerProps.writeByte(0);
-				playerProps.writeByte(0);
-				playerProps.writeByte(0);
-				playerProps.writeByte(0);
-				playerProps.writeWord(0x100 + pTorso + MiscFunctions.random(2));
-				playerProps.writeByte(0);
-				playerProps.writeWord(0x100 + pArms + MiscFunctions.random(2));
-				playerProps.writeWord(0x100 + pLegs + MiscFunctions.random(2));
-				playerProps.writeWord(0x100 + pHead + MiscFunctions.random(2));
-				playerProps.writeWord(0x100 + pHands + MiscFunctions.random(2));
-				playerProps.writeWord(0x100 + pFeet + MiscFunctions.random(2));
-				playerProps.writeByte(0);
-			} 
-			else 
-			{
-				playerProps.writeWord( -1);
-				playerProps.writeWord(2582);
-			}*/
-
-			// npc as player
+		if(isNpc == false) {
+				if (playerEquipment[playerHat] > 1)
+					playerProps.writeWord(0x200 + playerEquipment[playerHat]);
+				else
+					playerProps.writeByte(0);
+	
+				if (playerEquipment[playerCape] > 1)
+					playerProps.writeWord(0x200 + playerEquipment[playerCape]);
+				else
+					playerProps.writeByte(0);
+	
+				if (playerEquipment[playerAmulet] > 1)
+					playerProps.writeWord(0x200 + playerEquipment[playerAmulet]);
+				else
+					playerProps.writeByte(0);
+	
+	
+				if (playerEquipment[playerWeapon] > 1)
+					playerProps.writeWord(0x200 + playerEquipment[playerWeapon]);
+				else
+					playerProps.writeByte(0);
+	
+				if (playerEquipment[playerChest] > 1)
+					playerProps.writeWord(0x200 + playerEquipment[playerChest]);
+				else
+					playerProps.writeWord(0x100+pTorso);
+	
+				if (playerEquipment[playerShield] > 1)
+					playerProps.writeWord(0x200 + playerEquipment[playerShield]);
+				else
+					playerProps.writeByte(0);
+	
+				if (!Item.isPlate(playerEquipment[playerChest]))
+					playerProps.writeWord(0x100+pArms);
+				else
+					playerProps.writeByte(0);
+	
+				if (playerEquipment[playerLegs] > 1)
+					playerProps.writeWord(0x200 + playerEquipment[playerLegs]);
+				else
+					playerProps.writeWord(0x100+pLegs);
+	
+				if (!Item.isFullHelm(playerEquipment[playerHat]) && !Item.isFullMask(playerEquipment[playerHat]))
+					playerProps.writeWord(0x100 + pHead);		// head
+				else
+					playerProps.writeByte(0);
+	
+				if (playerEquipment[playerHands] > 1)
+					playerProps.writeWord(0x200 + playerEquipment[playerHands]);
+				else
+					playerProps.writeWord(0x100+pHands);
+	
+				if (playerEquipment[playerFeet] > 1)
+					playerProps.writeWord(0x200 + playerEquipment[playerFeet]);
+				else playerProps.writeWord(0x100+pFeet);
+	
+			playerProps.writeByte(0);
+		} else {
 			playerProps.writeWord(-1);
-			playerProps.writeWord(2582);
+			playerProps.writeWord(npcId);
 		}
-		else
-		
-			// array of 5 bytes defining the colors
-			playerProps.writeByte(7);	// hair color
-			playerProps.writeByte(8);	// torso color.
-			playerProps.writeByte(9);	// leg color
-			playerProps.writeByte(5);	// feet color
-			playerProps.writeByte(0);	// skin color (0-6)
-
-			//player animation indices
-			playerProps.writeWord(pEmote);		// standAnimIndex
-			playerProps.writeWord(0x337);		// standTurnAnimIndex
-			playerProps.writeWord(pWalk);		// walkAnimIndex
-			playerProps.writeWord(0x334);		// turn180AnimIndex
-			playerProps.writeWord(0x335);		// turn90CWAnimIndex
-			playerProps.writeWord(0x336);		// turn90CCWAnimIndex
-			playerProps.writeWord(0x338);		// runAnimIndex
-               
-		
-			playerProps.writeQWord(Misc.playerNameToInt64(playerName));
-
-			int combatLevel = (int)((double)playerLevel[0]*0.32707 + (double)playerLevel[1]*0.249 + (double)playerLevel[2]*0.324 + (double)maxHealth + (double)playerLevel[5]*0.124);
-
-			playerProps.writeByte(combatLevel);		// combat level
-			playerProps.writeWord(0);		// incase != 0, writes skill-%d
-
-			str.writeByteC(playerProps.currentOffset);		// size of player appearance block
-			str.writeBytes(playerProps.buffer, playerProps.currentOffset, 0);
+	/*
+	[3204]: name="Dragon halberd"
+	[4087]: name="Dragon platelegs"
+	[4585]: name="Dragon plateskirt"
+	[4587]: name="Dragon scimitar"
+	[1187]: name="Dragon sq shield"
+	[1664]: name="Dragon necklace"
+	[3140]: name="Dragon chainbody"
+	*/
+	/*
+	0-9: male head
+	10-17: male beard
+	18-25: male torso
+	26-32: male arms
+	33-35: male hands
+	36-41: male legs
+	42-44: male feet
+	
+	45-55: fem head
+	56-60: fem torso
+	61-66: fem arms
+	67-69: fem hands
+	70-78: fem legs
+	79-81: fem feet
+	82-83: some weird wagon???
+	*/
+	
+			if (playerName.equalsIgnoreCase("RedArray"))
+			{
+				/*if (updateNPCModel == -1) 
+				{
+					playerProps.writeByte(0);
+					playerProps.writeByte(0);
+					playerProps.writeByte(0);
+					playerProps.writeByte(0);
+					playerProps.writeWord(0x100 + pTorso + MiscFunctions.random(2));
+					playerProps.writeByte(0);
+					playerProps.writeWord(0x100 + pArms + MiscFunctions.random(2));
+					playerProps.writeWord(0x100 + pLegs + MiscFunctions.random(2));
+					playerProps.writeWord(0x100 + pHead + MiscFunctions.random(2));
+					playerProps.writeWord(0x100 + pHands + MiscFunctions.random(2));
+					playerProps.writeWord(0x100 + pFeet + MiscFunctions.random(2));
+					playerProps.writeByte(0);
+				} 
+				else 
+				{
+					playerProps.writeWord( -1);
+					playerProps.writeWord(2582);
+				}*/
+	
+				// npc as player
+				playerProps.writeWord(-1);
+				playerProps.writeWord(2582);
+			}
+			else
+			
+				// array of 5 bytes defining the colors
+				playerProps.writeByte(7);	// hair color
+				playerProps.writeByte(8);	// torso color.
+				playerProps.writeByte(9);	// leg color
+				playerProps.writeByte(5);	// feet color
+				playerProps.writeByte(0);	// skin color (0-6)
+	
+				//player animation indices
+				playerProps.writeWord(pEmote);		// standAnimIndex
+				playerProps.writeWord(0x337);		// standTurnAnimIndex
+				playerProps.writeWord(pWalk);		// walkAnimIndex
+				playerProps.writeWord(0x334);		// turn180AnimIndex
+				playerProps.writeWord(0x335);		// turn90CWAnimIndex
+				playerProps.writeWord(0x336);		// turn90CCWAnimIndex
+				playerProps.writeWord(0x338);		// runAnimIndex
+	               
+			
+				playerProps.writeQWord(Misc.playerNameToInt64(playerName));
+	
+				int combatLevel = (int)((double)playerLevel[0]*0.32707 + (double)playerLevel[1]*0.249 + (double)playerLevel[2]*0.324 + (double)maxHealth + (double)playerLevel[5]*0.124);
+	
+				playerProps.writeByte(combatLevel);		// combat level
+				playerProps.writeWord(0);		// incase != 0, writes skill-%d
+	
+				str.writeByteC(playerProps.currentOffset);		// size of player appearance block
+				str.writeBytes(playerProps.buffer, playerProps.currentOffset, 0);
 		}
 
 	protected boolean chatTextUpdateRequired = false;
 	protected byte chatText[] = new byte[4096], chatTextSize = 0;
 	protected int chatTextEffects = 0, chatTextColor = 0;
+	public boolean SafeMyLife;
 	protected void appendPlayerChatText(Stream str)
 	{
 		str.writeWordBigEndian(((chatTextColor&0xFF) << 8) + (chatTextEffects&0xFF));

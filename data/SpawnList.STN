@@ -1,0 +1,25 @@
+//	npcID	spawnX	spawnY	height	walk	maxhit	attack	defence	description
+spawn = 494	3252	3418	0	0	0	0	0	1	Varrock East Bank Male Banker
+spawn = 494	3253	3418	0	0	0	0	0	1	Varrock East Bank Male Banker
+spawn = 494	3254	3418	0	0	0	0	0	1	Varrock East Bank Male Banker
+spawn = 495	3256	3418	0	0	0	0	0	1	Varrock East Bank Female Banker
+spawn = 2253	3246	3431	0	0	0	0	0	1	Wise Old Man
+spawn = 50	3260	3431	0	0	0	0	0	1	Dragon?
+spawn = 399	3252	3430	0	0	0	0	0	1	Legends Guard
+spawn = 399	3254	3430	0	0	0	0	0	1	Legends Guard
+spawn = 547	3215	3436	0	0	0	0	0	1	Basrek?
+spawn = 313	3233	3433	0	0	0	0	0	1	fishing
+spawn = 312	3233	3434	0	0	0	0	0	1	fishing
+spawn = 309	3233	3435	0	0	0	0	0	1	fishing
+spawn = 316	3233	3436	0	0	0	0	0	1	fishing
+spawn = 319	3233	3437	0	0	0	0	0	1	fishing
+spawn = 186	3257	3407	0	0	0	0	0	1	thug
+spawn = 186	3254	3407	0	0	0	0	0	1	thug
+spawn = 186	3257	3396	0	0	0	0	0	1	thug
+spawn = 186	3251	3395	0	0	0	0	0	1	thug
+spawn = 21	3263	3436	0	0	0	0	0	1	hero
+spawn = 55	3208	3432	0	0	0	0	0	1	blue dragon
+spawn = 55	3212	3434	0	0	0	0	0	1	blue dragon
+spawn = 55	3217	3432	0	0	0	0	0	1	blue dragon
+spawn = 1	3241	3432	0	0	0	0	0	1	man
+spawn = 1	3243	3438	0	0	0	0	0	1	man

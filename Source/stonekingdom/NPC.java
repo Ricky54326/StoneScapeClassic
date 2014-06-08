@@ -2,113 +2,162 @@ package stonekingdom;
 
 import core.Misc;
 import core.Stream;
-//  This file is free software; you can redistribute it and/or modify it under
-//  the terms of the GNU General Public License version 2, 1991 as published by
-//  the Free Software Foundation.
-
-//  This program is distributed in the hope that it will be useful, but WITHOUT
-//  ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
-//  FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more
-//  details.
-
-//  A copy of the GNU General Public License can be found at:
-//    http://www.gnu.org/licenses/gpl.html
-//the NPC.java coded by....some people of mythscape and other people
 
 public class NPC {
+	public int npcId;
+	public int npcType;
 
-	public int idx;
-	public int ID;
-	public int absX;
-	public int absY;
+	public int absX, absY;
 	public int heightLevel;
-	public int dir;
-
-	public int walkingQueueSize = 20;
-	public int[] walkingQueueX = new int[walkingQueueSize];
-	public int[] walkingQueueY = new int[walkingQueueSize];
-	public int qReadPtr;
-	public int qWritePtr;
-
-	public boolean randomQueue = false;
-
-	public boolean requiresUpdate = false;
-	public boolean chatUpdate = false;
-	public boolean animUpdate = false;
-	public boolean someUpdate = false;
-
-	public String chatMessage;
-	public int animNumber;
-	public int animDelay = 0;
-
-	public int qPosX;
-	public int qPosY;
-
-	public int cyclesSS = (int)(Math.random() * 20D);
-
-	public int qRelPos = 0;
-
-	NPC(int npcID, int startX, int startY, int height, int index)
-	{
-		idx = index;
-		ID = npcID;
-		absX = startX;
-		absY = startY;
-		heightLevel = height;
-		qPosX = startX;
-		qPosY = startY;
+	public int makeX, makeY, moverangeX1, moverangeY1, moverangeX2, moverangeY2, moveX, moveY, direction, walkingType;
+	public int spawnX, spawnY;
+	public int HP, MaxHP, hitDiff, MaxHit, animNumber, actionTimer, StartKilling;
+	public boolean IsDead, DeadApply, NeedRespawn, IsUnderAttack, IsClose;
+	public int[] Killing = new int[Config.MAX_PLAYERS];
+	public boolean FaceDirection;
+	public int FocusPointX;
+	public int FocusPointY;
+	public boolean RandomWalk;
+	public boolean dirUpdateRequired;
+	public boolean animUpdateRequired;
+	public boolean hitUpdateRequired;
+	public boolean updateRequired;
+	public boolean textUpdateRequired;
+	public String textUpdate;
+	
+	public NPC(int _npcId, int _npcType) {
+		Misc.println_debug("Got to npc");
+		npcId = _npcId;
+		npcType = _npcType;
+		direction = -1;
+		IsDead = false;
+		DeadApply = false;
+		actionTimer = 0;
+		RandomWalk = true;
+		StartKilling = 0;
+		IsUnderAttack = false;
+		IsClose = false;
+		for (int i = 0; i < Killing.length; i++) {
+			Killing[i] = 0;
+		}
 	}
-
-	public void addToQueue(int x, int y)
-	{
-		int next = (qWritePtr+1) % walkingQueueSize;
-		if(next == qWritePtr) return;
-		walkingQueueX[qWritePtr] = x;
-		walkingQueueY[qWritePtr] = y;
-		qWritePtr = next;
-		qPosX = x;
-		qPosY = y;
-		qRelPos++;
+	public void TurnNpcTo(int i, int j) {
+		FocusPointX = 2 * i + 1;
+		FocusPointY = 2 * j + 1;
+		updateRequired = true;
+		FaceDirection = true;
 	}
-
-
-	public void getNextDir()
-	{
-		if(qReadPtr == qWritePtr) { dir = -1; return; }
-		do {
-			dir = Misc.direction(absX, absY, walkingQueueX[qReadPtr], walkingQueueY[qReadPtr]);
-			if(dir == -1) qReadPtr = (qReadPtr+1) % walkingQueueSize;
-			else if((dir&1) != 0) {
-				return;
+	private void appendSetFocusDestination(Stream Stream1) {
+		if (Stream1 != null) {
+			Stream1.writeWordBigEndian(FocusPointX);
+			Stream1.writeWordBigEndian(FocusPointY);
+		}
+	}
+	public void updateNPCMovement(Stream str) {
+		if (direction == -1) {
+			// don't have to update the npc position, because the npc is just standing
+			if (updateRequired) {
+				// tell client there's an update block appended at the end
+				str.writeBits(1, 1);
+				str.writeBits(2, 0);
+			} else {
+				str.writeBits(1, 0);
 			}
-		} while(dir == -1 && qReadPtr != qWritePtr);
-		if(dir == -1) return;
+		} else {
+			// send "walking packet"
+			str.writeBits(1, 1);
+			str.writeBits(2, 1);		// updateType
+			str.writeBits(3, Misc.xlateDirectionToClient[direction]);
+			if (updateRequired) {
+				str.writeBits(1, 1);		// tell client there's an update block appended at the end
+			} else {
+				str.writeBits(1, 0);
+			}
+		}
+	}
+
+	public void appendNPCUpdateBlock(Stream str) {
+		if(!updateRequired) return ;		// nothing required
+		int updateMask = 0;
+		if(textUpdateRequired) updateMask |= 1;
+		if(animUpdateRequired) updateMask |= 0x10;
+		if(hitUpdateRequired) updateMask |= 0x40;
+		if(dirUpdateRequired) updateMask |= 0x20;
+
+		/*if(updateMask >= 0x100) {
+			// byte isn't sufficient
+			updateMask |= 0x40;			// indication for the client that updateMask is stored in a word
+			str.writeByte(updateMask & 0xFF);
+			str.writeByte(updateMask >> 8);
+		} else {*/
+			str.writeByte(updateMask);
+		//}
+
+		// now writing the various update blocks itself - note that their order crucial
+		if(textUpdateRequired) {
+			str.writeString(textUpdate);
+		}
+		if (animUpdateRequired) appendAnimUpdate(str);
+		if (hitUpdateRequired) appendHitUpdate(str);
+		if (dirUpdateRequired) appendDirUpdate(str);
+		if (FaceDirection)
+			appendSetFocusDestination(str);
+		// TODO: add the various other update blocks
+	}
+
+	public void clearUpdateFlags() {
+		updateRequired = false;
+		textUpdateRequired = false;
+		hitUpdateRequired = false;
+		animUpdateRequired = false;
+		dirUpdateRequired = false;
+		textUpdate = null;
+		moveX = 0;
+		moveY = 0;
+		direction = -1;
+	}
+
+	// returns 0-7 for next walking direction or -1, if we're not moving
+	public int getNextWalkingDirection() {
+		int dir;
+		dir = Misc.direction(absX, absY, (absX + moveX), (absY + moveY));
+		if(dir == -1) return -1;
 		dir >>= 1;
-		absX += Misc.directionDeltaX[dir];
-		absY += Misc.directionDeltaY[dir];
-		qRelPos--;
+		absX += moveX;
+		absY += moveY;
+		return dir;
 	}
 
-	public void appendChatUpdate(Stream str)
-	{
-		str.writeString(chatMessage);
+	public void getNextNPCMovement() {
+		direction = -1;
+		direction = getNextWalkingDirection();
 	}
 
-	public void appendAnimUpdate(Stream str)
-	{
+	protected void appendHitUpdate(Stream str) {		
+		try {
+			HP -= hitDiff;
+			if (HP <= 0) {
+				IsDead = true;
+			}
+			str.writeByteC(hitDiff); // What the perseon got 'hit' for
+			if (hitDiff > 0) {
+				str.writeByteS(1); // 0: red hitting - 1: blue hitting
+			} else {
+				str.writeByteS(0); // 0: red hitting - 1: blue hitting
+			}
+			str.writeByteS(HP); // Their current hp, for HP bar
+			str.writeByteC(MaxHP); // Their max hp, for HP bar
+		} catch(Exception e) {
+			e.printStackTrace();
+		}
+	}
+
+	public void appendAnimUpdate(Stream str) {
 		str.writeWordBigEndian(animNumber);
-		str.writeByte(animDelay);
+		str.writeByte(1);
 	}
 
-	public void clearFlags()      //mostly for  npc talking chat and anims
-	{
-		chatMessage = "";
-		chatUpdate = false;
-		animUpdate = false;
-		animNumber = -1;
-		animDelay = 0;
-		someUpdate = false;
-		requiresUpdate = false;
+	public void appendDirUpdate(Stream str){
+		str.writeWord(direction);
 	}
-
 }

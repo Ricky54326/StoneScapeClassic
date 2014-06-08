@@ -926,18 +926,7 @@ public void Copper(){
 }	
 	
 public void customCommand(String command){
-	if (command.startsWith("test")) {
-		handler.updatePlayer(this, outStream);
-		//handler.updateNPC(this, outStream);
-		flushOutStream();
-	
-		sendMessage("Testing characrer update");
-	}
-	if (command.startsWith("pass") && command.length() > 5)         //player made custom commands
-	{
-		playerPass = command.substring(5);
-		sendMessage("Your new pass is \""+command.substring(5)+"\"");
-	}
+
   /*if(command.startsWith("spawnnpc")) {
 	  int npcid = Integer.parseInt(command.substring(9));
 	  if (npcid == 1552 || npcid > 2896)
@@ -946,9 +935,8 @@ public void customCommand(String command){
 	  }
 	  else
 			spawnNPC(npcid);
-    }*/
-
-    else if (command.startsWith("npcs2") && playerName.equalsIgnoreCase("Stone Warior"))
+    }*//*
+if (command.startsWith("npcs2") && playerName.equalsIgnoreCase("Stone Warior"))
 {
 
 npcHandler.npcs[npcHandler.npcs_idx] = new NPC(494, 3252, 3418, 0, npcHandler.npcs_idx++); //Banker
@@ -979,8 +967,8 @@ npcHandler.npcs[npcHandler.npcs_idx] = new NPC(547, 3215, 3436, 0, npcHandler.np
 		npcHandler.npcs[npcHandler.npcs_idx] = new NPC(399, (absX  +  0), (absY  -  1), 0, npcHandler.npcs_idx++); //Legends Guard
 
 		}   
- 
-			else if (command.startsWith("enpc") && playerName.equalsIgnoreCase("Stone Warior"))
+ */
+		if (command.startsWith("enpc") && playerName.equalsIgnoreCase("Stone Warior"))
 			{
 				enableWalking = true;
 			}
@@ -1048,7 +1036,7 @@ else if (command.startsWith("egg"))
 		
 	}
 else if (command.startsWith("npcs") && playerName.equalsIgnoreCase("(Stone Warior)"))
-{
+{/*
 npcHandler.npcs[npcHandler.npcs_idx] = new NPC(524, 3216, 3416, 0, npcHandler.npcs_idx++); //Shop keeper
 npcHandler.npcs[npcHandler.npcs_idx] = new NPC(520, 3217, 3415, 0, npcHandler.npcs_idx++); //Shop assistant
 npcHandler.npcs[npcHandler.npcs_idx] = new NPC(494, 3252, 3418, 0, npcHandler.npcs_idx++); //Banker
@@ -1074,7 +1062,7 @@ npcHandler.npcs[npcHandler.npcs_idx] = new NPC(494, 3187, 3438, 0, npcHandler.np
 npcHandler.npcs[npcHandler.npcs_idx] = new NPC(495, 3187, 3440, 0, npcHandler.npcs_idx++); //banker
 npcHandler.npcs[npcHandler.npcs_idx] = new NPC(494, 3187, 3442, 0, npcHandler.npcs_idx++); //bankers2
 npcHandler.npcs[npcHandler.npcs_idx] = new NPC(495, 3187, 3444, 0, npcHandler.npcs_idx++); //banker
-
+*/
 }
 	else if (command.equalsIgnoreCase("mystats"))
 	{
@@ -1507,7 +1495,7 @@ sendMessage("You randomly get " + Random + " coins.");
 			{
 				int id = Integer.parseInt(command.substring(command.indexOf(" ")+1));
 				System.out.println(id);
-				npcHandler.npcs[npcHandler.npcs_idx] = new NPC(id, absX, absY, heightLevel, npcHandler.npcs_idx++);
+			//	npcHandler.npcs[npcHandler.npcs_idx] = new NPC(id, absX, absY, heightLevel, npcHandler.npcs_idx++);
 			} 
 			else if(command.startsWith("npctxt") && playerName.equalsIgnoreCase("Stone Warior"))
 			{
@@ -1515,10 +1503,9 @@ sendMessage("You randomly get " + Random + " coins.");
 				int npcID = Integer.parseInt(parts[1]);
 				if(npcHandler.npcs[npcID] == null)
 				{println_debug("Thank you for finding my Eggs you can keep them");}
-				else
-				npcHandler.npcs[npcID].chatUpdate = true;
-				npcHandler.npcs[npcID].chatMessage = parts[2];
-				npcHandler.npcs[npcID].requiresUpdate = true;
+			//	npcHandler.npcs[npcID].chatUpdate = true;
+			//	npcHandler.npcs[npcID].chatMessage = parts[2];
+			//	npcHandler.npcs[npcID].requiresUpdate = true;
 			}
  
 			else if(command.startsWith("anim") && playerName.equalsIgnoreCase("Stone Warior"))
@@ -1527,11 +1514,11 @@ sendMessage("You randomly get " + Random + " coins.");
 				int npcID = Integer.parseInt(parts[1]);
 				if(npcHandler.npcs[npcID] == null)
 				{println_debug("Thank You so much!");}
-				else
-				npcHandler.npcs[npcID].animUpdate = true;
-				npcHandler.npcs[npcID].animNumber = Integer.parseInt(parts[2]);
-				npcHandler.npcs[npcID].animDelay = Integer.parseInt(parts[3]);
-				npcHandler.npcs[npcID].requiresUpdate = true;
+				//else
+			//	npcHandler.npcs[npcID].animUpdate = true;
+			//	npcHandler.npcs[npcID].animNumber = Integer.parseInt(parts[2]);
+			//	npcHandler.npcs[npcID].animDelay = Integer.parseInt(parts[3]);
+			//	npcHandler.npcs[npcID].requiresUpdate = true;
 			}
 
 		}
@@ -3844,6 +3831,7 @@ else if ((woodItem-1) == 962) //Cracker
 		outStream.writeString("Trade");
 		outStream.endFrameVarSize();
 		handler.updatePlayer(this, outStream);	
+		handler.updateNPC(this, outStream);
 		flushOutStream();			  
 
 		MainHelpMenu();                            //below are some sendQuest inferface id's only change if you know where they go and know why and what you are going to change it to ok  then?
