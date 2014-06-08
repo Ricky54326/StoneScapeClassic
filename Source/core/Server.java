@@ -11,8 +11,6 @@ package core;
 //  A copy of the GNU General Public License can be found at:
 //    http://www.gnu.org/licenses/gpl.html
 
-import java.io.*;
-
 import stonekingdom.Config;
 import stonekingdom.NPCHandler;
 import stonekingdom.PlayerHandler;
@@ -25,9 +23,6 @@ public class Server implements Runnable {
 		//js.start();
 
 	}
-
-	// TODO: yet to figure out proper value for timing, but 500 seems good
-	public static final int cycleTime = 600;
 
 	/**
 	 * The task scheduler.
@@ -116,29 +111,6 @@ public class Server implements Runnable {
 		} catch(java.lang.Exception __ex) {
 			__ex.printStackTrace();
 		}
-	}
-	public boolean banned(String host)
-	{
-		try
-		{
-			BufferedReader in = new BufferedReader(new FileReader("data/banned.dat"));
-			String data = null;
-			while ((data = in.readLine()) != null)
-			{
-				if (host.indexOf(data) > -1)
-				{
-					return true;
-				}
-				in.close();
-			}
-			
-		}			
-		catch (IOException e)
-		{
-			System.out.println("Critical error while checking banned");
-			e.printStackTrace();
-		}
-		return false;
 	}
 }
 

@@ -218,7 +218,8 @@ public int timeLoggedinandOut;public Player(int _playerId) {
 	public int[] bankItems = new int[800];
 	public int[] bankItemsN = new int[800];
 	public boolean bankNotes = false;
-
+    public int bankXremoveSlot;
+    public int bankXinterfaceID;
 
 	//Default appearance
 	public int pHead;
@@ -380,7 +381,7 @@ public int timeLoggedinandOut;public Player(int _playerId) {
 				mapRegionX = (teleportToX>>3)-6;
 				mapRegionY = (teleportToY>>3)-6;
 
-				//playerListSize = 0;		// THIS BREAKS TELEPORTING
+				//playerListSize = 0;		// THIS BREAKS TELEPORTING WHO THOUGHT OF THIS IDIOT IDEA
 			}
 
 			currentX = teleportToX - 8*mapRegionX;

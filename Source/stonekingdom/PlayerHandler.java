@@ -290,15 +290,15 @@ if (updateRunning && !updateAnnounced)
 					str.writeBits(2, 3);
 				}
 			}
-		
+
 			for(int i = 0; i < Config.MAX_PLAYERS; i++) {
 				if(players[i] == null || !players[i].isActive || players[i] == plr)
 					continue;
 				int id = players[i].playerId;
 				if((plr.playerInListBitmap[id>>3]&(1 << (id&7))) != 0)
-					continue;	
-				if(!plr.withinDistance(players[i])) 
-					continue;		
+					continue;
+				if(!plr.withinDistance(players[i]))
+					continue;
 				plr.addNewPlayer(players[i], str, updateBlock);
 			}
 	

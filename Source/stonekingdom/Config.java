@@ -14,6 +14,7 @@ public static final int MAX_PLAYERS = 500;
 	public static boolean SERVER_DEBUG = true; //True = debugging mode TURN OFF BEFORE LAUNCH
 	public static int PORT_NUMBER = 30712;
 	public static String SERVER_NAME = "Stone-Kingdom";
+	public static int SERVER_REVISION = 317; //DO NOT CHANGE UNLESS YOU CHANGE CLIENTS, WILL BREAK ALL PACKETS
 	public static void welcome(Client c){
 		c.sendMessage("Welcome to Stone-Kingdom V1");
 	}
