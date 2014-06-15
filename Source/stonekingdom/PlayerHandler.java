@@ -31,7 +31,7 @@ public class PlayerHandler{
 	private Queue<IOClient> add = new ConcurrentLinkedQueue<IOClient>();
 	private Queue<IOClient> remove = new ConcurrentLinkedQueue<IOClient>();
 	private Queue<IOClient> removeNoClose = new ConcurrentLinkedQueue<IOClient>();
-	public static final int maxPlayers = 2000;
+	public final static int maxPlayers = 2000;
 	public static Player players[] = new Player[maxPlayers];
 	public int playerSlotSearchStart = 1;			// where we start searching at when adding a new player
 	public static String kickNick = "";

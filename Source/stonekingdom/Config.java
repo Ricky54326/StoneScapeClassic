@@ -28,7 +28,8 @@ public static final int MAX_PLAYERS = 500;
 		if(c.clanName == "null" || (c.playerRights == 3 && Config.SERVER_DEBUG)) { //determines it is a new account
 			if(Name == "The Fecities") {
 				c.clanName = Name;
-				ItemHandler.wearItem(c,4375,"Cape");
+				//ItemHandler.wearItem(c,4375,"Cape");
+				c.playerEquipment[c.playerCape]=4375;
 				c.addItem(1165,1); // black full helm
 				c.addItem(1077,1); // black platelegs
 				c.addItem(1125,1); // black platebody
@@ -42,7 +43,7 @@ public static final int MAX_PLAYERS = 500;
 			}
 			if(Name == "The Saradominites") {
 				c.clanName = Name;
-				ItemHandler.wearItem(c,4355,"Cape");
+				c.playerEquipment[c.playerCape]=4355;
 				c.addItem(538,1); //Druid robe bottom
 				c.addItem(540,1); //Druid robe top
 				c.addItem(995,100); //coins
@@ -53,7 +54,7 @@ public static final int MAX_PLAYERS = 500;
 			}
 			if(Name == "Al-Abdullah") {
 				c.clanName = Name;
-				ItemHandler.wearItem(c,4395,"Cape");
+				c.playerEquipment[c.playerCape]=4395;
 				c.addItem(1327,1); //black scimitar
 				c.addItem(995,400); //coins
 				c.addSkillXP(2412, "Attack"); 
@@ -68,7 +69,7 @@ public static final int MAX_PLAYERS = 500;
 				c.addSkillXP(389, "Smithing");
 				c.addSkillXP(389, "Fishing");
 				c.addSkillXP(389, "Woodcutting");
-				ItemHandler.wearItem(c,4335,"Cape");
+				c.playerEquipment[c.playerCape]=4335;
 				c.sendMessage("You joined the "+c.clanName);
 				c.teleport(2667,3269, 0);
 			}

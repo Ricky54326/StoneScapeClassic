@@ -26,7 +26,6 @@ public class NPC {
 	public String textUpdate;
 	
 	public NPC(int _npcId, int _npcType) {
-		Misc.println_debug("Got to npc");
 		npcId = _npcId;
 		npcType = _npcType;
 		direction = -1;

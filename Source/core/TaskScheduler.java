@@ -25,7 +25,7 @@ public final class TaskScheduler implements Runnable {
 	/**
 	 * The time period, in milliseconds, of a single cycle.
 	 */
-	private static final int TIME_PERIOD = 600;
+	private static final int TIME_PERIOD = 300;
 
 	/**
 	 * The {@link ScheduledExecutorService} which schedules calls to the

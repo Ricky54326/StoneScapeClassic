@@ -31,7 +31,9 @@ public abstract class Player {
 public int Days;
 public int Hours;
 public int Minutes;
-public int timeLoggedinandOut;public Player(int _playerId) {
+public int timeLoggedinandOut;
+
+public Player(int _playerId) {
 		playerId = _playerId;
 		//playerName = "player"+playerId;
 		playerRights = 0; //pelaajantila
@@ -275,6 +277,22 @@ public int timeLoggedinandOut;public Player(int _playerId) {
 		int deltaX = otherPlr.absX-absX, deltaY = otherPlr.absY-absY;
 		return deltaX <= 15 && deltaX >= -16 && deltaY <= 15 && deltaY >= -16;
 	}
+	
+	public boolean goodDistance(int objectX, int objectY, int playerX, int playerY, int distance) {
+		for (int i = 0; i <= distance; i++) {
+		  for (int j = 0; j <= distance; j++) {
+			if ((objectX + i) == playerX && ((objectY + j) == playerY || (objectY - j) == playerY || objectY == playerY)) {
+				return true;
+			} else if ((objectX - i) == playerX && ((objectY + j) == playerY || (objectY - j) == playerY || objectY == playerY)) {
+				return true;
+			} else if (objectX == playerX && ((objectY + j) == playerY || (objectY - j) == playerY || objectY == playerY)) {
+				return true;
+			}
+		  }
+		}
+		return false;
+	}
+	
 	public boolean withinDistance(NPC npc) {
 		if (heightLevel != npc.heightLevel) return false;
 		if (npc.NeedRespawn == true) return false;
@@ -312,10 +330,20 @@ public int timeLoggedinandOut;public Player(int _playerId) {
 	// bit at position npcId is set to 1 incase player is currently in playerList
 	public byte npcInListBitmap[] = new byte[(NPCHandler.maxNPCs+7) >> 3];
 	
+	
+	
 	public int existingNPCs = 0;
 	public int npcArray_idx = 0;
 
+	public int distanceToPoint(int pointX, int pointY) {
+		return (int) Math.sqrt(Math.pow(absX - pointX, 2) + Math.pow(absY - pointY, 2));
+	}
+	
+	public boolean[] IsDropped = new boolean[ItemHandler.MaxDropItems];
+	public boolean[] MustDelete = new boolean[ItemHandler.MaxDropItems];
+	
 	public NPC npcArray[] = new NPC[100];
+	
 	
 	
 	public void addNewNPC(NPC npc, Stream str, Stream updateBlock)

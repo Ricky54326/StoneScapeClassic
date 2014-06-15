@@ -1,6 +1,8 @@
 package stonekingdom;
 
 import core.Misc;
+import core.Server;
+import core.Task;
 /**
  * @author Stone- Copyright 2014
  * @version 1.00
@@ -8,12 +10,14 @@ import core.Misc;
  * Handles all packets
  */
 public class IOPackets {
-	public static void parseIncomingPackets(Client c)
+	public static void parseIncomingPackets(final Client c)
 	{//
-        int Slot, ItemID, ObjX, ObjY, ObjID; //Stone-Kingdom Standards for handling packet data
+        int Slot; //Stone-Kingdom Standards for handling packet data
+		final int ItemID;
+		int ObjX, ObjY, ObjID;
 		int i;
 		if(c.playerRights == 3 && c.packetType != 0) {
-            Misc.println_debug("Packet Type: " + c.packetType);
+            //Misc.println_debug("Packet Type: " + c.packetType);
         }
 		switch(c.packetType) {
 		
@@ -176,6 +180,15 @@ outStream.writeByte(1); //amount
                 c.addItem(Item.randomNPCDrop(), 1);
 				break;
 
+			case 87: //Drop Item
+				ItemID = c.getInStream().readUnsignedWordA();
+				c.getInStream().readUnsignedByte();
+				int Amt = c.getInStream().readUnsignedByte();
+				Slot = c.getInStream().readUnsignedWordA();
+				c.dropItem(ItemID, Slot, 1);
+				Misc.println_debug("Dropped Item amount: "+Amt);
+				break;
+				
             case 122:	//Clickable items: Food, Bones, Potions, Bandages etc.  DIFFERS FROM EQUIPTING ITEMS
 			c.inStream.readSignedWordBigEndianA();
 			Slot = (c.inStream.readUnsignedWord() -128);
@@ -1297,11 +1310,25 @@ xxxxstart gnome agility course codexxx
 				break;
 
 			case 236: //Pick up an Item
-			c.inStream.readSignedWordBigEndian();
-			ItemID = c.inStream.readUnsignedWord();
-			c.inStream.readSignedWordBigEndian();
-			Misc.println_debug("Picked up item: "+ItemID);
-            c.pickUpItem(ItemID,1);
+				final int itemY = c.inStream.readSignedWordBigEndian();
+				ItemID = c.inStream.readUnsignedWord();
+				final int itemX = c.inStream.readSignedWordBigEndian();
+				Server.getTaskScheduler().schedule(new Task(1, true) {
+					private int count = 15;
+		
+					@Override
+					protected void execute() {
+						if (count > 0) {
+							if(c.goodDistance(itemX, itemY, c.absX, c.absY, 1)){
+								c.pickUpItem(ItemID, itemX, itemY, 1);
+								stop();
+							}
+							count--;
+						} else {
+							stop();
+						}
+					}
+				});
     			break;
 
 			case 73: //TODO DOES THIS TRADE OR ATTACK. huge difference!

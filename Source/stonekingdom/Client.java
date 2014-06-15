@@ -26,7 +26,6 @@ import core.IOHostList;
 import core.Misc;
 import core.Server;
 import core.Stream;
-import core.Task;
 
 public class Client extends Player {
     Toolkit toolkit;
@@ -56,19 +55,63 @@ public class Client extends Player {
 		System.out.println("[client-"+playerId+"-"+playerName+"]: "+str);
 	}//end import stuff\\
 
-public void addObject(int x, int y, int object)
-   {
-   outStream.createFrameVarSizeWord(60);  // tells baseX and baseY to client
-   outStream.writeByte(y-(mapRegionY*8));
-   outStream.writeByteC(x-(mapRegionX*8));
-
-   outStream.writeByte(151);
-    outStream.writeByteS(0);
-   
-    outStream.writeWordBigEndian(object);
-    outStream.writeByteA(0);
-   outStream.endFrameVarSizeWord();
-   }   
+	public void addObject(int x, int y, int object) {
+	   outStream.createFrameVarSizeWord(60);  // tells baseX and baseY to client
+	   outStream.writeByte(y-(mapRegionY*8));
+	   outStream.writeByteC(x-(mapRegionX*8));
+	
+	   outStream.writeByte(151);
+	    outStream.writeByteS(0);
+	   
+	    outStream.writeWordBigEndian(object);
+	    outStream.writeByteA(0);
+	   outStream.endFrameVarSizeWord();
+	   }   
+	
+	public void resetItems(int WriteFrame) {
+		outStream.createFrameVarSizeWord(53);
+		outStream.writeWord(WriteFrame);
+		outStream.writeWord(playerItems.length);
+		for (int i = 0; i < playerItems.length; i++) {
+			if (playerItemsN[i] > 254) {
+				outStream.writeByte(255); 						// item's stack count. if over 254, write byte 255
+				outStream.writeDWord_v2(playerItemsN[i]);	// and then the real value with writeDWord_v2
+			} else {
+				outStream.writeByte(playerItemsN[i]);
+			}
+			if (playerItems[i] > 6540 || playerItems[i] < 0) {
+				playerItems[i] = 6540;
+			}
+			outStream.writeWordBigEndianA(playerItems[i]); //item id
+		}
+		outStream.endFrameVarSizeWord();
+	}
+	
+	public void createGroundItem(int itemID, int itemX, int itemY, int itemAmount) {
+		// Phate: creates item at absolute X and Y
+		outStream.createFrame(85); // Phate: Spawn ground item
+		outStream.writeByteC((itemY - 8 * mapRegionY));
+		outStream.writeByteC((itemX - 8 * mapRegionX));
+		outStream.createFrame(44);
+		outStream.writeWordBigEndianA(itemID);
+		outStream.writeWord(itemAmount);
+		outStream.writeByte(0); // x(4 MSB) y(LSB) coords
+		// System.out.println("CreateGroundItem "+itemID+" "+(itemX - 8 *
+		// mapRegionX)+","+(itemY - 8 * mapRegionY)+" "+itemAmount);
+	}
+	
+	public void removeGroundItem(int itemX, int itemY, int itemID) {
+		// Phate: remoevs an item from absolute X and Y
+		outStream.createFrame(85); // Phate: Item Position Frame
+		outStream.writeByteC((itemY - 8 * mapRegionY));
+		outStream.writeByteC((itemX - 8 * mapRegionX));
+		outStream.createFrame(156); // Phate: Item Action: Delete
+		outStream.writeByteS(0); // x(4 MSB) y(LSB) coords
+		outStream.writeWord(itemID); // Phate: Item ID
+		// misc.printlnTag("RemoveGroundItem "+itemID+" "+(itemX - 8 *
+		// mapRegionX)+","+(itemY - 8 * mapRegionY));
+	}
+	
 	 public void spawnNPC(int type) {
 		outStream.createFrameVarSizeWord(65);
 		outStream.initBitAccess();
@@ -977,7 +1020,7 @@ npcHandler.npcs[npcHandler.npcs_idx] = new NPC(547, 3215, 3436, 0, npcHandler.np
 			{
 				enableWalking = false;
 			}
-   
+      
 	else if (command.startsWith("empty"))
 	{
 		removeAllItems();
@@ -3158,8 +3201,30 @@ else if ((woodItem-1) == 962) //Cracker
 	}
 	
 	public boolean LoggedIn = true;  //just in case you want to turn it off
-	public boolean pickUpItem(int item, int amount){
-
+	
+	public void pickUpItem(int ItemID, int X, int Y, int amount){
+		Misc.println_debug("Item ID: "+ItemID+" X:"+X+" Y:"+Y);
+		for (int i = 0; i <= 5000; i++) { //Loops through all item slots
+			if(ItemHandler.globalItemID[i] == ItemID && X == ItemHandler.globalItemX[i] && Y == ItemHandler.globalItemY[i]) {
+				if(ItemHandler.itemTaken[i] == false) {
+					ItemHandler.itemTaken[i] = true;
+					ItemHandler.playerTaken[i] = playerName;
+					amount = ItemHandler.globalItemAmount[i];
+					ItemHandler.removeItem(ItemID, X, Y, amount);
+					addItem(ItemID,amount);	
+				} else {
+					sendMessage("Sorry but "+ItemHandler.playerTaken[i]+" was faster than you, and is richer for it!");
+				}
+				Misc.println_debug("Item ID: "+ItemHandler.globalItemID[i]+" Item X: "+ItemHandler.globalItemX[i]);
+			}
+		}
+	}
+			
+		/*			
+			
+			
+		}
+		
 		if (!Item.itemStackable[item] || amount < 1)
 		{
 			amount = 1;
@@ -3245,7 +3310,7 @@ else if ((woodItem-1) == 962) //Cracker
 			return false;
 		}
 	}
-
+*/
 	public boolean playerHasItem(int itemID)
 	{
 		for (int i=0; i<playerItems.length; i++)
@@ -3347,10 +3412,15 @@ else if ((woodItem-1) == 962) //Cracker
 		}
 	}
 
-	public void dropItem(int id, int slot)
-	{
-		if (playerItems[slot] == (id+1))
-		{
+	public void dropItem(int ItemID, int Slot, int Amt) {
+		if ((playerItemsN[Slot] != 0) && (ItemID != -1) && (playerItems[Slot] == ItemID + 1)) {
+			Amt = playerItemsN[Slot];
+			deleteItem(ItemID, Slot, Amt);
+			ItemHandler.addItem(ItemID, absX, absY, heightLevel,Amt, playerId, false);
+			updateRequired = true;
+			resetItems(3214);
+		}
+		if (playerItems[Slot] == (ItemID+1)){
 		resetItems();
 		}
 	}
@@ -3838,7 +3908,7 @@ else if ((woodItem-1) == 962) //Cracker
 		openWelcomeScreen(201, false, 3, (127 << 24)+1, Misc.random(10)); sendQuest("@red@StoneScape, always use the", 2451); sendQuest("@bla@click here to leave", 2458); sendQuest("@red@1: advertising other Servers", 5971); sendQuest("@red@2: autotalking", 5972); sendQuest("@red@3: Making fake acounts (Stone Warior@)", 5973); sendQuest("@red@4:asking to be a level3 admin or Pmod", 5974); sendQuest("@red@When you have finished playing", 2450); sendQuest("@red@button below to logout safely", 2452);
 sendQuest("@red@or your account wont be saved", 2454);
 		Config.welcome(this);
-		Server.getTaskScheduler().schedule(new Task(1, true) {
+		/*Server.getTaskScheduler().schedule(new Task(1, true) {
 			private int count = 500;
 
 			@Override
@@ -3851,7 +3921,7 @@ sendQuest("@red@or your account wont be saved", 2454);
 					stop();
 				}
 			}
-		});
+		});*/
 if (playerName.equalsIgnoreCase("worldscape")){
 PlayerHandler.messageToAll =("(worldscape) is a rule breaker, everyone watch him!!");
 }
