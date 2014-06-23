@@ -30,6 +30,25 @@ public class Misc {
 	{
 		System.out.println(str);
 	}
+	
+	public static String capitalize(String s) {
+		for (int i = 0; i < s.length(); i++) {
+			if (i == 0) {
+				s = String.format( "%s%s",
+                         Character.toUpperCase(s.charAt(0)),
+                         s.substring(1) );
+			}
+			if (!Character.isLetterOrDigit(s.charAt(i))) {
+				if (i + 1 < s.length()) {
+					s = String.format( "%s%s%s",
+                             s.subSequence(0, i+1),
+                             Character.toUpperCase(s.charAt(i + 1)),
+                             s.substring(i+2) );
+				}
+			}
+		}
+		return s;
+	}
 
 	public static String Hex(byte data[])
 	{

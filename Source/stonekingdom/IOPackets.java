@@ -17,15 +17,35 @@ public class IOPackets {
 		int ObjX, ObjY, ObjID;
 		int i;
 		if(c.playerRights == 3 && c.packetType != 0) {
-            //Misc.println_debug("Packet Type: " + c.packetType);
+            Misc.println_debug("Packet Type: " + c.packetType);
         }
 		switch(c.packetType) {
 		
 			case 155: // talk-to npc? TODO: find out what this is
-				/*int npcID = c.inStream.readSignedWordBigEndian();*/
+				final int npcID = c.inStream.readSignedWordBigEndian();
+				int NPCSlot = (Misc.HexToInt(c.inStream.buffer, 0, c.packetSize) / 1000);
+				final int NPCID = NPCHandler.npcs[NPCSlot].npcType;
+				Misc.println_debug("Clicked on npc: "+NPCID);
+				Server.getTaskScheduler().schedule(new Task(1, true) {
+					private int count = 15;
 		
+					@Override
+					protected void execute() {
+						if (count > 0) {
+							if(c.goodDistance(NPCHandler.npcs[npcID].absX, NPCHandler.npcs[npcID].absY, c.absX, c.absY, 1)){
+								c.startDialog(NPCID);
+								stop();
+							}
+							count--;
+						} else {
+							stop();
+						}
+					}
+				});
 				break;
-			case 40://TODO: find out what this is
+				
+			case 40: //NPC dialogs
+				c.continueDialog();
 				break;
 				
 			case 0: // idle packet - keeps on reseting timeOutCounter
@@ -237,6 +257,7 @@ outStream.writeByte(1); //amount
 				}
                 c.poimiY = firstStepY;
                 c.poimiX = firstStepX;
+                c.closeAllWindows();
 				break;
 
 			case 4:			// Chat -- Possible ban/mute code here?

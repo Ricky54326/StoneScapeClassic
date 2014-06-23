@@ -16,6 +16,7 @@ package stonekingdom;
  * 1. No more then 120 characters per line this makes it so you never have to scroll horizontally
  * 2. Comment your code. If I can't understand, it isn't acceptable and vise versa
  */
+
 import java.io.*;
 import java.util.Timer;
 import java.util.TimerTask;
@@ -46,6 +47,9 @@ public class Client extends Player {
 	  Seconds = Seconds + 1;
             }
         }
+    
+
+	
 	public void println_debug(String str)
 	{
 		System.out.println("[client-"+playerId+"-"+playerName+"]: "+str);
@@ -209,6 +213,7 @@ return thieve[(int)(Math.random()*thieve.length)];
 	public int timeOutCounter = 0;		// to detect timeouts on the connection to the client
 
 	public NPCHandler npcHandler;
+	
 
 	public int returnCode = 2; //Tells the client if the login was successfull
 
@@ -280,12 +285,35 @@ public void sendQuest(String s, int id)
 		outStream.writeWordBigEndian(id);
 		outStream.writeWordA(0);
 	}
-public void setLine(String s, int id)
+	
+	public void sendFrame164(int Frame) {
+		outStream.createFrame(164);
+		outStream.writeWordBigEndian_dup(Frame);
+		flushOutStream();
+	}
+	
+	public void sendFrame246(int MainFrame, int SubFrame, int SubFrame2) {
+		outStream.createFrame(246);
+		outStream.writeWordBigEndian(MainFrame);
+		outStream.writeWord(SubFrame);
+		outStream.writeWord(SubFrame2);
+		flushOutStream();
+	}
+	
+	
+	public void setLine(String s, int id)
 	{
 		outStream.createFrameVarSizeWord(126);
 		outStream.writeString(s);
 		outStream.writeWordA(id);
 		outStream.endFrameVarSizeWord();
+		flushOutStream();
+	}
+
+	public void sendFrame185(int Frame) {
+		outStream.createFrame(185);
+		outStream.writeWordBigEndianA(Frame);
+		flushOutStream();
 	}
 
 	public void setHeadAnim(int i, int j)
@@ -300,6 +328,43 @@ public void setLine(String s, int id)
 		outStream.writeWordBigEndianA(i);
 		outStream.writeWordBigEndianA(j);
 	}
+	
+	public void startDialog(int npcID) {
+		resetDialog();
+		npcChat = npcID;
+		npcName = getNPCName(npcID);
+		if(playerRights == 3) 
+			sendMessage("NPC NAME: "+npcName);
+		GlobalInteractions.dialog(this);
+	}
+	
+	public void continueDialog() {
+		if(chatNumber != -1) {
+			chatNumber += 1;
+			GlobalInteractions.dialog(this);
+		} else {
+			resetDialog();
+		}
+	}
+	
+	public void resetDialog() {
+		npcName = "null";
+		chatNumber = 0;
+		npcChat = -1;
+		closeAllWindows();
+	}
+	
+	public String getNPCName(int NpcID) {
+		for (int i = 0; i < NPCHandler.maxListedNPCs; i++) {
+			if (Server.npcHandler.NpcList[i] != null) {
+				if (Server.npcHandler.NpcList[i].npcId == NpcID) {
+					return Server.npcHandler.NpcList[i].npcName;
+				}
+			}
+		}
+		return "!! NOT EXISTING NPC !!! - ID:"+NpcID;
+	}
+	
 	public void updateBankChat(int headID)                  //start talking npcs code
 	{
 		if(npcChatID == 1)
@@ -1544,7 +1609,7 @@ sendMessage("You randomly get " + Random + " coins.");
 			{
 				String[] parts = command.split(" ", 3);
 				int npcID = Integer.parseInt(parts[1]);
-				if(npcHandler.npcs[npcID] == null)
+				if(NPCHandler.npcs[npcID] == null)
 				{println_debug("Thank you for finding my Eggs you can keep them");}
 			//	npcHandler.npcs[npcID].chatUpdate = true;
 			//	npcHandler.npcs[npcID].chatMessage = parts[2];
@@ -1555,7 +1620,7 @@ sendMessage("You randomly get " + Random + " coins.");
 			{
 				String[] parts = command.split(" ", 4);
 				int npcID = Integer.parseInt(parts[1]);
-				if(npcHandler.npcs[npcID] == null)
+				if(NPCHandler.npcs[npcID] == null)
 				{println_debug("Thank You so much!");}
 				//else
 			//	npcHandler.npcs[npcID].animUpdate = true;
@@ -3985,10 +4050,10 @@ PlayerHandler.messageToAll =("(worldscape) is a rule breaker, everyone watch him
 
 	public void moveNPC(int num, int dir)
 	{
-		if(npcHandler.npcs[num] != null)
+		if(NPCHandler.npcs[num] != null)
 		{
-			npcHandler.npcs[num].absX += Misc.directionDeltaX[dir];
-			npcHandler.npcs[num].absY += Misc.directionDeltaY[dir];
+			NPCHandler.npcs[num].absX += Misc.directionDeltaX[dir];
+			NPCHandler.npcs[num].absY += Misc.directionDeltaY[dir];
 		}
 	}
 

@@ -242,6 +242,11 @@ public Player(int _playerId) {
 	public int[] playerEquipment = new int[14];
 	public int[] playerEquipmentN = new int[14];
 	
+	public String npcName = "null";
+	public byte chatNumber = 0;
+	public int npcChat = -1;
+	
+	
 	public int playerHat=0;
 	public int playerCape=1;
 	public int playerAmulet=2;

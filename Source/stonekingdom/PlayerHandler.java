@@ -19,7 +19,6 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 
 import core.IOClient;
 import core.Misc;
-import core.Server;
 import core.Stream;
 
 public class PlayerHandler{
@@ -338,14 +337,14 @@ if (updateRunning && !updateAnnounced)
 
 		// iterate through all npcs to check whether there's new npcs to add
 		for(int i = 0; i < NPCHandler.maxNPCs; i++) {
-			if(Server.npcHandler.npcs[i] != null) {
-				int id = Server.npcHandler.npcs[i].npcId;
+			if(NPCHandler.npcs[i] != null) {
+				int id = NPCHandler.npcs[i].npcId;
 				if (plr.RebuildNPCList == false && (plr.npcInListBitmap[id>>3]&(1 << (id&7))) != 0) {
 					// npc already in npcList
-				} else if (plr.withinDistance(Server.npcHandler.npcs[i]) == false) {
+				} else if (plr.withinDistance(NPCHandler.npcs[i]) == false) {
 					// out of sight
 				} else {
-					plr.addNewNPC(Server.npcHandler.npcs[i], str, updateBlock);
+					plr.addNewNPC(NPCHandler.npcs[i], str, updateBlock);
 				}
 			}
 		}

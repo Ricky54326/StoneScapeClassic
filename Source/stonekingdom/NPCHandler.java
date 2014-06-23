@@ -8,7 +8,7 @@ public class NPCHandler {
 	public static int maxNPCs = 10000;
 	public static int maxListedNPCs = 10000;
 	public static int maxNPCDrops = 10000;
-	public NPC npcs[] = new NPC[maxNPCs];
+	public static NPC npcs[] = new NPC[maxNPCs];
 	public NPCList NpcList[] = new NPCList[maxListedNPCs];
 	//public NPCDrops NpcDrops[] = new NPCDrops[maxNPCDrops];
 
@@ -59,7 +59,7 @@ public class NPCHandler {
 		newNPC.heightLevel = heightLevel;
 		npcs[slot] = newNPC;
 	}
-
+	
 	public void newNPCList(int npcType, String npcName, int combat, int HP) {
 		// first, search for a free slot
 		int slot = -1;
