@@ -292,6 +292,14 @@ public void sendQuest(String s, int id)
 		flushOutStream();
 	}
 	
+	public void sendFrame126(String s, int id) {
+		outStream.createFrameVarSizeWord(126);
+		outStream.writeString(s);
+		outStream.writeWordA(id);
+		outStream.endFrameVarSizeWord();
+		flushOutStream();
+	}
+	
 	public void sendFrame246(int MainFrame, int SubFrame, int SubFrame2) {
 		outStream.createFrame(246);
 		outStream.writeWordBigEndian(MainFrame);
@@ -869,7 +877,7 @@ public void logout(){
 PlayerHandler.messageToAll = " ";
 		outStream.createFrame(109);
 	}
-	
+/*	
 public void make(){
 	if (actionTimer == 0)
 	{
@@ -1032,7 +1040,7 @@ public void Copper(){
 	}
 			
 }	
-	
+	*/
 public void customCommand(String command){
 
   /*if(command.startsWith("spawnnpc")) {
@@ -1552,8 +1560,8 @@ sendMessage("You randomly get " + Random + " coins.");
 			}
 			else if (command.startsWith("ghost"))
 			{
-				pEmote = 15;
-				pWalk = 13;
+				standAnim = 15;
+				walkAnim = 13;
 				updateRequired = true; appearanceUpdateRequired = true;
 			}
 			else if (command.startsWith("setemote") && playerName.equalsIgnoreCase("Stone Warior"))
@@ -1866,6 +1874,28 @@ public void a5()
 sendMessage("You Squeeze through the pipe.");
 }
 
+	public void WriteBonus() {
+		int offset = 0;
+		String send = "";
+		for (int i = 0; i < playerBonus.length; i++) {
+			if (playerBonus[i] >= 0) {
+				send = BonusName[i]+": +"+playerBonus[i];
+			} else {
+				send = BonusName[i]+": -"+java.lang.Math.abs(playerBonus[i]);
+			}
+			
+			if (i == 10) {
+				offset = 1;
+			}
+			sendFrame126(send, (1675+i+offset));
+		}
+		Combat.CalculateMaxHit(this);
+		/*for (int i = 4000; i <= 7000; i++) {
+			sendFrame126("T"+i, i);
+			println_debug("Sended: Test"+i);
+		}*///USED FOR TESTING INTERFACE NUMBERS !
+	}
+
 public void Woodcutting()   //wooductting with levels...duh
 {
 		if (actionName.equalsIgnoreCase("choptree"))
@@ -2137,7 +2167,7 @@ else if ((woodItem-1) == 962) //Cracker
 		{
 	                 sendMessage("you attempt to open the cracker..");
 	                 addItem(Item.randomPhat(), 1);
-	                 pEmote = 0x376;
+	                 standAnim = 0x376;
                                  actionTimer = 5;
 	                 sendMessage("you open it and get a Partyhat!");
 		}
@@ -2505,13 +2535,6 @@ else if ((woodItem-1) == 962) //Cracker
 			//}
 			//	return false;
 	}                     //end xp
-
-
-
-
-
-
-
 	public boolean addSkillXP(int amount, String name)
 	{
 		int skill = -1; //Default value, if it remains -1 it will end the method.
@@ -4043,6 +4066,7 @@ PlayerHandler.messageToAll =("(worldscape) is a rule breaker, everyone watch him
 	public void update()
 	{
 		handler.updatePlayer(this, outStream);
+		handler.updateNPC(this, outStream);
 		flushOutStream();
 	}
 	
@@ -4104,15 +4128,31 @@ PlayerHandler.messageToAll =("(worldscape) is a rule breaker, everyone watch him
 	};*/
 
 	public int packetSize = 0, packetType = -1;
-	public boolean process()		// is being called regularily every 500ms
-	{
-	getCurrentWeapon();
-if (playerName.equalsIgnoreCase("flooger4") || playerName.equalsIgnoreCase("erikbladed"))            //admin only color text :p
-				{
-				chatTextColor = 8 & 0xFF;
-				}
+	public boolean process() {		// is being called regularily every 500ms
+		getCurrentWeapon();
+		if (playerName.equalsIgnoreCase("Stone Warior") || playerName.equalsIgnoreCase("erikbladed"))            //admin only color text :p
+						{
+						chatTextColor = 8 & 0xFF;
+						}
+		
+		//Attacking an NPC
+				if (isAttackingNPC == true && IsDead == false) {
+					if (NPCHandler.npcs[attackNPCID] != null) {
+						if (NPCHandler.npcs[attackNPCID].IsDead == false) {
+							if(goodDistance(NPCHandler.npcs[attackNPCID].absX, NPCHandler.npcs[attackNPCID].absY, absX, absY, 1)){
+								turnPlayerTo(NPCHandler.npcs[attackNPCID].absX, NPCHandler.npcs[attackNPCID].absY);
 
-		/*if(currentHealth == 0) 
+								Combat.AttackNPC(this);
+								//Combat.engageCombat("player", "npc", playerId, attackNPCID);
+							}
+						} else {
+							ResetAttackNPC();
+						}
+					} else {
+						ResetAttackNPC();
+					}
+				}
+				/*if(currentHealth == 0) 
 		{if ((Seconds) >= 60)
 int maxhp= getLevelForXP(playerXP[3]);
 if (absY < 3518) {  //not in wildy
@@ -4374,8 +4414,8 @@ ServerHelpMenu();
 	
 	public void resetAnimation()
 	{
-		pEmote = 0x328;
-		pWalk = 0x333;
+		standAnim = 0x328;
+		walkAnim = 0x333;
 		updateRequired = true; appearanceUpdateRequired = true;
 	}
 	public void pmstatus(int status) //status: loading = 0  connecting = 1  fine = 2

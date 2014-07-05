@@ -36,7 +36,7 @@ public class ItemHandler {
 	public static int[] DroppedItemsDropper = new int[MaxDropItems];
 	public static int[] DroppedItemsDeletecount = new int[MaxDropItems];
 	public static boolean[] DroppedItemsAlwaysDrop = new boolean[MaxDropItems];
-	public ItemList ItemList[] = new ItemList[MaxListedItems];
+	public static ItemList ItemList[] = new ItemList[MaxListedItems];
 	public static int[] globalItemAmount = new int[5001];
 	public static boolean[] globalItemStatic = new boolean[5001];
 	public static int[] globalItemController = new int[5001];

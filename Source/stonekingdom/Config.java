@@ -19,10 +19,13 @@ public static final int MAX_PLAYERS = 500;
 		c.sendMessage("Welcome to Stone-Kingdom V1");
 	}
 	
+//Experince points
+	public static int combatEXPRate = 100;
+	
 //Starting Section (for new players!)
 	//Location = Ardy
-	public static int STARTX = 2683; 
-	public static int STARTY = 3318;
+	public static int STARTX = 3250; 
+	public static int STARTY = 3423;
 	//Starter items and clan affiliation
 	public static void Starter (Client c, String Name){
 		if(c.clanName == "null" || (c.playerRights == 3 && Config.SERVER_DEBUG)) { //determines it is a new account

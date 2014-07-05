@@ -1,5 +1,7 @@
 package stonekingdom;
 
+
+
 import java.io.*;
 
 import core.Misc;
@@ -171,10 +173,10 @@ public class NPCHandler {
 							npcs[i] = null;
 							newNPC(old1, old2, old3, old4, old5, old6, old7, old8, old9, old10);
 						}
-					} else if (npcs[i].RandomWalk == true && Misc.random(10) == 1 && npcs[i].moverangeX1 > 0 && npcs[i].moverangeY1 > 0 && npcs[i].moverangeX2 > 0 && npcs[i].moverangeY2 > 0) { //Move NPC
+					} if (npcs[i].RandomWalk == true && Misc.random2(10) == 1 && npcs[i].moverangeX1 > 0 && npcs[i].moverangeY1 > 0 && npcs[i].moverangeX2 > 0 && npcs[i].moverangeY2 > 0) { //Move NPC
 						int MoveX = Misc.random(1);
 						int MoveY = Misc.random(1);
-						int Rnd = Misc.random(4);
+						int Rnd = Misc.random2(4);
 						if (Rnd == 1) {
 							MoveX = -(MoveX);
 							MoveY = -(MoveY);
@@ -188,20 +190,20 @@ public class NPCHandler {
 							npcs[i].moveY = MoveY;
 						}
 						npcs[i].updateRequired = true;
-					} else if (npcs[i].RandomWalk == false && npcs[i].IsUnderAttack == true) {
+					} if (npcs[i].RandomWalk == false && npcs[i].IsUnderAttack == true) {
 						AttackPlayer(i);
 					}
 					if (npcs[i].RandomWalk == true) {
 						npcs[i].getNextNPCMovement();
 					}
 					if (npcs[i].npcType == 81 || npcs[i].npcType == 397 || npcs[i].npcType == 1766 || npcs[i].npcType == 1767 || npcs[i].npcType == 1768) {
-						if (Misc.random(50) == 1) {
+						if (Misc.random2(50) == 1) {
 							npcs[i].updateRequired = true;
 							npcs[i].textUpdateRequired = true;
 							npcs[i].textUpdate = "Moo";
 						}
 					}
-				} else if (npcs[i].IsDead == true) {
+				} if (npcs[i].IsDead == true) {
 					if (npcs[i].actionTimer == 0 && npcs[i].DeadApply == false && npcs[i].NeedRespawn == false) {
 						if (npcs[i].npcType == 81 || npcs[i].npcType == 397 || npcs[i].npcType == 1766 || npcs[i].npcType == 1767 || npcs[i].npcType == 1768) {
 							npcs[i].animNumber = 0x03E; //cow dead
@@ -216,7 +218,7 @@ public class NPCHandler {
 						npcs[i].animUpdateRequired = true;
 						npcs[i].DeadApply = true;
 						npcs[i].actionTimer = 10;
-					} else if (npcs[i].actionTimer == 0 && npcs[i].DeadApply == true && npcs[i].NeedRespawn == false) {
+					} if (npcs[i].actionTimer == 0 && npcs[i].DeadApply == true && npcs[i].NeedRespawn == false) {
 						MonsterDropItems(i);
 						npcs[i].NeedRespawn = true;
 						npcs[i].actionTimer = 60;
@@ -226,7 +228,7 @@ public class NPCHandler {
 						npcs[i].animNumber = 0x328;
 						npcs[i].updateRequired = true;
 						npcs[i].animUpdateRequired = true;
-					} else if (npcs[i].actionTimer == 0 && npcs[i].NeedRespawn == true) {
+					} if (npcs[i].actionTimer == 0 && npcs[i].NeedRespawn == true) {
 						for (int j = 1; j < PlayerHandler.maxPlayers; j++) {
 							if (PlayerHandler.players[j] != null) {
 								PlayerHandler.players[j].RebuildNPCList = true;
@@ -417,18 +419,23 @@ WORLDMAP 2: (not-walk able places)
 	};
 
 
-	public boolean AttackPlayer(int NPCID) {
+	public static boolean AttackPlayer(int NPCID) {
+		
 		int Player = npcs[NPCID].StartKilling;
 		if (PlayerHandler.players[Player] == null) {
 			ResetAttackPlayer(NPCID);
 			return false;
-		} else if (PlayerHandler.players[Player].DirectionCount < 2) {
-			return false;
-		}
+		} 
+		Misc.println_debug("test1");
+		//if (PlayerHandler.players[Player].DirectionCount < 2) {
+		//	Misc.println_debug("test2");
+		//	return false;
+		//}
+		Misc.println_debug("test3");
 		int EnemyX = PlayerHandler.players[Player].absX;
 		int EnemyY = PlayerHandler.players[Player].absY;
-		int EnemyHP = 100;//PlayerHandler.players[Player].playerLevel[PlayerHandler.players[Player].playerHitpoints];
-		int EnemyMaxHP = 200;//getLevelForXP(PlayerHandler.players[Player].playerXP[PlayerHandler.players[Player].playerHitpoints]);
+		int EnemyHP = PlayerHandler.players[Player].playerLevel[PlayerHandler.players[Player].playerHitpoints];
+		int EnemyMaxHP = getLevelForXP(PlayerHandler.players[Player].playerXP[PlayerHandler.players[Player].playerHitpoints]);
 		boolean RingOfLife = false;
 		if (PlayerHandler.players[Player].playerEquipment[PlayerHandler.players[Player].playerRing] == 2570) {
 			RingOfLife = true;
@@ -436,6 +443,7 @@ WORLDMAP 2: (not-walk able places)
 		int hitDiff = 0;
 		hitDiff = Misc.random(npcs[NPCID].MaxHit);
 		if (GoodDistance(npcs[NPCID].absX, npcs[NPCID].absY, EnemyX, EnemyY, 1) == true) {
+			Misc.println_debug("test1");
 			if (npcs[NPCID].actionTimer == 0) {
 				if (RingOfLife == true && EnemyHP <= (int)((double)((double)EnemyMaxHP / 10.0) + 0.5)) {
 					PlayerHandler.players[Player].SafeMyLife = true;
@@ -461,6 +469,7 @@ WORLDMAP 2: (not-walk able places)
 						PlayerHandler.players[Player].updateRequired = true;
 						PlayerHandler.players[Player].hitUpdateRequired = true;
 						PlayerHandler.players[Player].appearanceUpdateRequired = true;
+						Misc.println_debug("test2");
 						npcs[NPCID].actionTimer = 7;
 					}
 				}
@@ -469,7 +478,7 @@ WORLDMAP 2: (not-walk able places)
 		}
 		return false;
 	}
-	public int getLevelForXP(int exp) {
+	public static int getLevelForXP(int exp) {
 		int points = 0;
 		int output = 0;
 
@@ -481,7 +490,7 @@ WORLDMAP 2: (not-walk able places)
 		}
 		return 0;
 	}
-	public boolean GoodDistance(int objectX, int objectY, int playerX, int playerY, int distance) {
+	public static boolean GoodDistance(int objectX, int objectY, int playerX, int playerY, int distance) {
 		for (int i = 0; i <= distance; i++) {
 		  for (int j = 0; j <= distance; j++) {
 			if ((objectX + i) == playerX && ((objectY + j) == playerY || (objectY - j) == playerY || objectY == playerY)) {
@@ -495,7 +504,7 @@ WORLDMAP 2: (not-walk able places)
 		}
 		return false;
 	}
-	public boolean ResetAttackPlayer(int NPCID) {
+	public static boolean ResetAttackPlayer(int NPCID) {
 		npcs[NPCID].IsUnderAttack = false;
 		npcs[NPCID].StartKilling = 0;
 		npcs[NPCID].RandomWalk = true;

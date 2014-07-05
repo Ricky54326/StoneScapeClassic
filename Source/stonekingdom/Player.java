@@ -153,14 +153,18 @@ public Player(int _playerId) {
 		for(int i = 0; i < maxPlayerListSize; i++) playerList[i] = null;
 		npcListSize = 0;
 		for(int i = 0; i < maxNPCListSize; i++) npcList[i] = null;
+		
 		absX = absY = -1;
 		mapRegionX = mapRegionY = -1;
 		currentX = currentY = 0;
 		resetWalkingQueue();
 	}
+	public int getStandAnim(int tempAnim, int cycles) {
+		return 0;
+	}
 	
 	public void setAnimation(int anim) {
-		pEmote = anim;
+		standAnim = anim;
 		actionTimer = 13;
 		updateRequired = true; appearanceUpdateRequired = true;
 	}
@@ -181,6 +185,54 @@ public Player(int _playerId) {
 	public int actionAmount = 0;
 	public String actionName = "";
 
+	public int playerBonus[] = new int[12];
+	public String BonusName[] = {"Stab", "Slash", "Crush", "Magic", "Range", "Stab", "Slash", "Crush", "Magic", "Range", 
+			"Strength", "Prayer"
+		};
+	public void ResetBonus() {
+		for (int i = 0; i < playerBonus.length; i++) {
+			playerBonus[i] = 0;
+		}
+	}
+	public void GetBonus() {
+		for (int i = 0; i < playerEquipment.length; i++) {
+			if (playerEquipment[i] > -1) {
+				for (int j = 0; j < ItemHandler.MaxListedItems; j++) {
+					if (ItemHandler.ItemList[i] != null) {
+							if (ItemHandler.ItemList[j].itemId == playerEquipment[i]) {
+							for (int k = 0; k < playerBonus.length; k++) {
+								playerBonus[k] += ItemHandler.ItemList[j].Bonuses[k];
+							}
+							break;
+						}
+					}
+				}
+			}
+		}
+	}
+	
+	public int playerAttack = 0;
+	public int playerDefence = 1;
+	public int playerStrength = 2;
+	public int playerHitpoints = 3;
+	public int playerRanged = 4;
+	public int playerPrayer = 5;
+	public int playerMagic = 6;
+	public int playerCooking = 7;
+	public int playerWoodcutting = 8;
+	public int playerFletching = 9;
+	public int playerFishing = 10;
+	public int playerFiremaking = 11;
+	public int playerCrafting = 12;
+	public int playerSmithing = 13;
+	public int playerMining = 14;
+	public int playerHerblore = 15;
+	public int playerAgility = 16;
+	public int playerThieving = 17;
+	public int playerSlayer = 18;
+	public int playerFarming = 19;
+	public int playerRunecrafting = 20;
+	
 	public String clanName = "null";
 	
 	public String connectedFrom="";
@@ -195,8 +247,8 @@ public Player(int _playerId) {
 
 	
 	
-	public int hitDiff = 0;
-	public boolean hitUpdateRequired = false;
+	protected int hitDiff = 0;
+	protected boolean hitUpdateRequired = false;
 
 	public boolean takeAsNote = false;
 	
@@ -236,8 +288,9 @@ public Player(int _playerId) {
 	public int pLegs;
 	public int pFeet;
 	public int pBeard;
-    public int pEmote = 0x328; // this being the original standing state
-	public int pWalk = 0x333; // original walking animation
+    public int standAnim = 0x328; // this being the original standing state
+	public int walkAnim = 0x333; // original walking animation
+	public int attackAnim = 0;
 
 	public int[] playerEquipment = new int[14];
 	public int[] playerEquipmentN = new int[14];
@@ -245,7 +298,46 @@ public Player(int _playerId) {
 	public String npcName = "null";
 	public byte chatNumber = 0;
 	public int npcChat = -1;
+	public int attackNPCID = -1;
+	public boolean isAttackingNPC = false;
+	public int fightType = 0;
 	
+	public void startAnimation(int animId) {
+		//if (wearing2h() && animId == 829)
+			//return;
+		animationRequest = animId;
+		animationWaitCycles = 0;
+		updateRequired = true;
+	}
+	
+	public void startAnimation(int animId, int time) {
+		animationRequest = animId;
+		animationWaitCycles = time;
+		updateRequired = true;
+	}	
+	
+	public void appendAnimationRequest(Stream str) {
+		//synchronized(this) {
+			str.writeWordBigEndian((animationRequest==-1) ? 65535 : animationRequest);
+			str.writeByteC(animationWaitCycles);
+		
+	}
+	
+	public boolean ResetAttackNPC() {
+		if (attackNPCID > -1 && attackNPCID < NPCHandler.maxNPCs) {
+			NPCHandler.npcs[attackNPCID].IsUnderAttack = false;
+		}
+		isAttackingNPC = false;
+		attackNPCID = -1;
+		resetAnimation();
+		return true;
+	}
+	
+	public void resetAnimation() {
+		standAnim = 0x328;
+		updateRequired = true;
+		appearanceUpdateRequired = true;
+	}
 	
 	public int playerHat=0;
 	public int playerCape=1;
@@ -305,7 +397,7 @@ public Player(int _playerId) {
 		return deltaX <= 15 && deltaX >= -16 && deltaY <= 15 && deltaY >= -16;
 	}
 
-
+	public int playerMaxHit = 0;
 	public int mapRegionX, mapRegionY;		// the map region the player is currently in
 	public int absX, absY;					// absolute x/y coordinates
 	public int currentX, currentY;			// relative x/y coordinates (to map region)
@@ -349,7 +441,11 @@ public Player(int _playerId) {
 	
 	public NPC npcArray[] = new NPC[100];
 	
-	
+	public void turnPlayerTo(int pointX, int pointY){
+	      FocusPointX = 2*pointX+1;
+	      FocusPointY = 2*pointY+1;
+		  updateRequired = true;
+	    }
 	
 	public void addNewNPC(NPC npc, Stream str, Stream updateBlock)
 	{
@@ -799,9 +895,9 @@ public Player(int _playerId) {
 				playerProps.writeByte(0);	// skin color (0-6)
 	
 				//player animation indices
-				playerProps.writeWord(pEmote);		// standAnimIndex
+				playerProps.writeWord(standAnim);		// standAnimIndex
 				playerProps.writeWord(0x337);		// standTurnAnimIndex
-				playerProps.writeWord(pWalk);		// walkAnimIndex
+				playerProps.writeWord(walkAnim);		// walkAnimIndex
 				playerProps.writeWord(0x334);		// turn180AnimIndex
 				playerProps.writeWord(0x335);		// turn90CWAnimIndex
 				playerProps.writeWord(0x336);		// turn90CCWAnimIndex
@@ -833,12 +929,22 @@ public Player(int _playerId) {
 
 	public void appendPlayerUpdateBlock(Stream str)
 	{
+		
 		if(!updateRequired && !chatTextUpdateRequired) return ;		// nothing required
 		int updateMask = 0;
-		if(chatTextUpdateRequired) {updateMask |= 0x80;}
-		if(appearanceUpdateRequired){ updateMask |= 0x10;}
-		if(hitUpdateRequired) 
-		{
+		if(FocusPointX != -1) { 
+			updateMask |= 2;
+		}
+		if(animationRequest != -1) {
+			updateMask |= 8;
+		}
+		if(chatTextUpdateRequired) {
+			updateMask |= 0x80;
+		}
+		if(appearanceUpdateRequired){ 
+			updateMask |= 0x10;
+		}
+		if(hitUpdateRequired) {
 			updateMask |= 0x20;
 		}
 
@@ -851,9 +957,21 @@ public Player(int _playerId) {
 		else str.writeByte(updateMask);
 
 		// now writing the various update blocks itself - note that their order crucial
-		if(chatTextUpdateRequired) appendPlayerChatText(str);
-		if(appearanceUpdateRequired) appendPlayerAppearance(str);
-		if (hitUpdateRequired) appendHitUpdate(str);
+		if(chatTextUpdateRequired){
+			appendPlayerChatText(str);
+		}
+		if(appearanceUpdateRequired){
+			appendPlayerAppearance(str);
+		}
+		if(animationRequest != -1) {
+			appendAnimationRequest(str);	
+		}
+		if(FocusPointX != -1) { 
+			appendSetFocusDestination(str);
+		}
+		if (hitUpdateRequired){
+			appendHitUpdate(str);
+		}
 
 		// TODO: add the various other update blocks
 
@@ -865,10 +983,22 @@ public Player(int _playerId) {
 		chatTextUpdateRequired = false;
 		appearanceUpdateRequired = false;
 		hitUpdateRequired = false;
+		FocusPointX = -1;
+		animationRequest = -1;
+		FocusPointY = -1;
 	}
+	
+	public int animationRequest = -1,animationWaitCycles;
 
-
-
+	private void appendSetFocusDestination(Stream str) {
+		//synchronized(this) {
+			str.writeWordBigEndianA(FocusPointX);
+	        str.writeWordBigEndian(FocusPointY);
+		
+    }
+	
+	public int FocusPointX = -1, FocusPointY = -1;
+	//public int focusPointX = -1, focusPointY = -1;
 	protected static int newWalkCmdX[] = new int[walkingQueueSize];
 	protected static int newWalkCmdY[] = new int[walkingQueueSize];
 	protected static int newWalkCmdSteps = 0;
@@ -1003,7 +1133,40 @@ public Player(int _playerId) {
 		tradeFromID = 0;
 		tradeWaitingTime = 0;
 	}
-	public void appendHitUpdate(Stream str) 
+	
+	protected int NewHP = 100;
+	protected void appendHitUpdate(Stream str) {		
+		try {
+			str.writeByte(hitDiff); // What the perseon got 'hit' for
+			if (hitDiff > 0) {
+				str.writeByteA(1); // 0: red hitting - 1: blue hitting
+			} else {
+				str.writeByteA(0); // 0: red hitting - 1: blue hitting
+			}
+			NewHP = (playerLevel[playerHitpoints] - hitDiff);
+			if ((playerLevel[playerHitpoints] - hitDiff) <= 0) {
+				NewHP = 0;
+				IsDead = true;
+			}
+			str.writeByteC(NewHP); // Their current hp, for HP bar
+			str.writeByte(getLevelForXP(playerXP[playerHitpoints])); // Their max hp, for HP bar
+		} catch(Exception e) {
+			e.printStackTrace();
+		}
+	}
+	public int getLevelForXP(int exp) {
+		int points = 0;
+		int output = 0;
+
+		for (int lvl = 1; lvl <= 99; lvl++) {
+			points += Math.floor((double)lvl + 300.0 * Math.pow(2.0, (double)lvl / 7.0));
+			output = (int)Math.floor(points / 4);
+			if (output >= exp)
+				return lvl;
+		}
+		return 0;
+	}
+	/*public void appendHitUpdate(Stream str) 
 	{
 		try 
 		{
@@ -1017,4 +1180,5 @@ public Player(int _playerId) {
 			e.printStackTrace();
 		}
 	}
+	*/
 }

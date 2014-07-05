@@ -188,16 +188,21 @@ outStream.writeByte(1); //amount
 				break;
 				
 			case 72:  //Attack NPC
-				c.returnCode = 4;
-				//PlayerHandler.messageToAll = playerName+" Killed an NPC!!";
-                                c.sendMessage("You killed a NPC!");
-				//addSkillXP(55*1, 2);
-				//addSkillXP(55*1, 3);
-				//spawnNPC(50);
-                c.sendMessage("You take some random items,some bones and a couple of coins!");
-                c.addItem(526, 1);
-                c.addItem(995, 50);
-                c.addItem(Item.randomNPCDrop(), 1);
+				c.attackNPCID = c.inStream.readUnsignedWordA();
+				c.sendMessage(""+c.playerId);
+				if (c.attackNPCID >= 0 && c.attackNPCID < NPCHandler.maxNPCs) {
+					NPCHandler.npcs[c.attackNPCID].RandomWalk = false;
+					NPCHandler.npcs[c.attackNPCID].IsUnderAttack = true;
+					c.isAttackingNPC = true;
+					//if (NPCHandler.npcs[c.attackNPCID].StartKilling == 0) {
+					NPCHandler.npcs[c.attackNPCID].StartKilling = c.playerId;
+					//}
+
+					//Combat.engageCombat("player", "npc", c.playerId, c.attackNPCID);
+				} else {
+					c.sendMessage("Exception catched, npc id was invalid.");
+					c.ResetAttackNPC();
+				}
 				break;
 
 			case 87: //Drop Item
@@ -258,6 +263,7 @@ outStream.writeByte(1); //amount
                 c.poimiY = firstStepY;
                 c.poimiX = firstStepX;
                 c.closeAllWindows();
+                c.ResetAttackNPC();
 				break;
 
 			case 4:			// Chat -- Possible ban/mute code here?
@@ -1944,11 +1950,56 @@ xxxxstart gnome agility course codexxx
 			case 54104: //farming
 				farmingMenu();
 				break;
-*/
+			*/case 9125: //Accurate
+			case 22228: //punch (unarmed)
+			case 48010: //flick (whip)
+			case 21200: //spike (pickaxe)
+			case 1080: //bash (staff)
+			case 6168: //chop (axe)
+			case 6236: //accurate (long bow)
+			case 17102: //accurate (darts)
+			case 8234: //stab (dagger)
+				c.fightType = 1;
+				break;
+			case 9126: //Defensive
+			case 48008: //deflect (whip)
+			case 22229: //block (unarmed)
+			case 21201: //block (pickaxe)
+			case 1078: //focus - block (staff)
+			case 6169: //block (axe)
+			case 33019: //fend (hally)
+			case 18078: //block (spear)
+			case 8235: //block (dagger)
+				c.fightType = 4;
+				break;
+				case 9127: // Controlled
+			case 48009: //lash (whip)
+			case 33018: //jab (hally)
+			case 6234: //longrange (long bow)
+			case 18077: //lunge (spear)
+			case 18080: //swipe (spear)
+			case 18079: //pound (spear)
+			case 17100: //longrange (darts)
+				c.fightType = 3;
+				break;
+			case 9128: //Aggressive
+			case 22230: //kick (unarmed)
+			case 21203: //impale (pickaxe)
+			case 21202: //smash (pickaxe)
+			case 1079: //pound (staff)
+			case 6171: //hack (axe)
+			case 6170: //smash (axe)
+			case 33020: //swipe (hally)
+			case 6235: //rapid (long bow)
+			case 17101: //repid (darts)
+			case 8237: //lunge (dagger)
+			case 8236: //slash (dagger)
+				c.fightType = 2;
+				break;
             default:
                 c.sendMessage("Currently that button does nothing!");
-                c.sendMessage("Please submit a bug report by entering /bug "+ButtonID+" (WHAT IS SHOULD DO)");
-                c.sendMessage("Example /bug 152 This should make the player run");
+                c.sendMessage("Please submit a bug report by entering ::bug "+ButtonID+" (WHAT IS SHOULD DO)");
+                c.sendMessage("Example ::bug 152 This should make the player run");
                 System.out.println("UNPROGRAMMED BUTTON "+ButtonID);
 				break;
                           }

@@ -18,9 +18,12 @@ public class Misc {
 	{
 		System.out.print(str);				// comment this line out if you want to get rid of debug messages
 	}
-	public static void println_debug(String str)
-	{
+	public static void println_debug(String str){
 		System.out.println(str);
+	}
+	
+	public static int random2(int range) { //1 till range
+		return (int)((java.lang.Math.random() * range) + 1);
 	}
 	public static void print(String str)
 	{

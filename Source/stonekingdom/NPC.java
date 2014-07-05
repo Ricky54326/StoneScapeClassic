@@ -40,18 +40,17 @@ public class NPC {
 			Killing[i] = 0;
 		}
 	}
-	public void TurnNpcTo(int i, int j) {
+	public void TurnNPCTo(int i, int j) {
 		FocusPointX = 2 * i + 1;
 		FocusPointY = 2 * j + 1;
 		updateRequired = true;
-		FaceDirection = true;
 	}
-	private void appendSetFocusDestination(Stream Stream1) {
-		if (Stream1 != null) {
-			Stream1.writeWordBigEndian(FocusPointX);
-			Stream1.writeWordBigEndian(FocusPointY);
-		}
-	}
+	private void appendSetFocusDestination(Stream str) {
+        str.writeWordBigEndian(FocusPointX);
+        str.writeWordBigEndian(FocusPointY);
+    }
+	
+	
 	public void updateNPCMovement(Stream str) {
 		if (direction == -1) {
 			// don't have to update the npc position, because the npc is just standing
@@ -74,14 +73,26 @@ public class NPC {
 			}
 		}
 	}
-
+	
+	
 	public void appendNPCUpdateBlock(Stream str) {
 		if(!updateRequired) return ;		// nothing required
 		int updateMask = 0;
-		if(textUpdateRequired) updateMask |= 1;
-		if(animUpdateRequired) updateMask |= 0x10;
-		if(hitUpdateRequired) updateMask |= 0x40;
-		if(dirUpdateRequired) updateMask |= 0x20;
+		if(textUpdateRequired){
+			updateMask |= 1;
+		}
+		if(animUpdateRequired){
+			updateMask |= 0x10;
+		}
+		if(hitUpdateRequired) {
+			updateMask |= 0x40;
+		}
+		if(dirUpdateRequired){
+			updateMask |= 0x20;
+		}
+		if(FocusPointX != -1) { 
+			updateMask |= 4;		
+		}
 
 		/*if(updateMask >= 0x100) {
 			// byte isn't sufficient
@@ -96,11 +107,18 @@ public class NPC {
 		if(textUpdateRequired) {
 			str.writeString(textUpdate);
 		}
-		if (animUpdateRequired) appendAnimUpdate(str);
-		if (hitUpdateRequired) appendHitUpdate(str);
-		if (dirUpdateRequired) appendDirUpdate(str);
-		if (FaceDirection)
+		if (animUpdateRequired) {
+			appendAnimUpdate(str);
+		}
+		if (hitUpdateRequired){
+			appendHitUpdate(str);
+		}
+		if (dirUpdateRequired){
+			appendDirUpdate(str);
+		}
+		if(FocusPointX != -1) {
 			appendSetFocusDestination(str);
+		}
 		// TODO: add the various other update blocks
 	}
 
@@ -132,25 +150,20 @@ public class NPC {
 		direction = getNextWalkingDirection();
 	}
 
-	protected void appendHitUpdate(Stream str) {		
-		try {
-			HP -= hitDiff;
-			if (HP <= 0) {
-				IsDead = true;
-			}
-			str.writeByteC(hitDiff); // What the perseon got 'hit' for
-			if (hitDiff > 0) {
-				str.writeByteS(1); // 0: red hitting - 1: blue hitting
-			} else {
-				str.writeByteS(0); // 0: red hitting - 1: blue hitting
-			}
-			str.writeByteS(HP); // Their current hp, for HP bar
-			str.writeByteC(MaxHP); // Their max hp, for HP bar
-		} catch(Exception e) {
-			e.printStackTrace();
+	public void appendHitUpdate(Stream str) {		
+		if (HP <= 0) {
+			IsDead = true;
 		}
+		str.writeByteC(hitDiff); 
+		if (hitDiff > 0) {
+			str.writeByteS(1); 
+		} else {
+			str.writeByteS(0); 
+		}	
+		str.writeByteS(HP); 
+		str.writeByteC(MaxHP); 	
 	}
-
+	
 	public void appendAnimUpdate(Stream str) {
 		str.writeWordBigEndian(animNumber);
 		str.writeByte(1);
