@@ -203,10 +203,10 @@ public class PlayerHandler{
 
 			players[i].actionAmount--;
 
-			players[i].preProcessing();
-			while(players[i].process());
+			players[i].preProcessing();			
+			while(players[i].processQueuedPackets());
+			players[i].process();
 			players[i].postProcessing();
-
 			players[i].getNextPlayerMovement();
 
 			if(players[i].playerName.equalsIgnoreCase(kickNick))

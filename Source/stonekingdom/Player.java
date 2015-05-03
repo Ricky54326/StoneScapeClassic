@@ -180,7 +180,7 @@ public Player(int _playerId) {
 	public abstract void pmupdate(int pmid, int world);
 	public int Privatechat = 0;
 	public abstract void sendpm(long name,int rights,byte[] chatmessage, int messagesize);
-
+	public abstract boolean processQueuedPackets();
 	public int actionTimer = 0;
 	public int actionAmount = 0;
 	public String actionName = "";

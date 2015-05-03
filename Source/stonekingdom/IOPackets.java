@@ -1,5 +1,6 @@
 package stonekingdom;
 
+import core.PacketType;
 import core.Misc;
 import core.Server;
 import core.Task;
@@ -10,7 +11,26 @@ import core.Task;
  * Handles all packets
  */
 public class IOPackets {
-	public static void parseIncomingPackets(final Client c)
+	private static PacketType packetId[] = new PacketType[256];
+	public static void processPacket(Client c, int packetType, int packetSize) {	
+		if(packetType == -1) {
+			return;
+		}
+		PacketType p = packetId[packetType];
+		if(p != null) {
+			try {
+				//System.out.println("packet: " + packetType);
+				p.processPacket(c, packetType, packetSize);
+			//c.sendMessage("Packet type: "+packetType+ " - size: "+packetSize);
+			} catch(Exception e) {
+					e.printStackTrace();
+			}
+		} else {
+			//FlagAccount.cheatClient("Sending unhandled packets", c);
+			System.out.println("Unhandled packet type: "+packetType+ " - size: "+packetSize);
+		}
+	}
+	public static void parseIncomingPackets(final Client c, int packetType, int packetSize)
 	{//
         int Slot; //Stone-Kingdom Standards for handling packet data
 		final int ItemID;

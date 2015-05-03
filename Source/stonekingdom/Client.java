@@ -18,15 +18,21 @@ package stonekingdom;
  */
 
 import java.io.*;
+import java.util.LinkedList;
+import java.util.Queue;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.awt.Toolkit;
+
+import org.apache.mina.common.IoSession;
 
 import core.Cryption;
 import core.IOHostList;
 import core.Misc;
 import core.Server;
 import core.Stream;
+import core.StaticPacketBuilder;
+import core.Packet;
 
 public class Client extends Player {
     Toolkit toolkit;
@@ -47,8 +53,19 @@ public class Client extends Player {
 	  Seconds = Seconds + 1;
             }
         }
-    
-
+    private Queue<Packet> queuedPackets = new LinkedList<Packet>();
+    public Client(IoSession s, int _playerId) {
+		super(_playerId);
+		this.session = s;
+		synchronized(this) {
+			outStream = new Stream(new byte[Config.BUFFER_SIZE]);
+			outStream.currentOffset = 0;
+		
+		inStream = new Stream(new byte[Config.BUFFER_SIZE]);
+		inStream.currentOffset = 0;
+		buffer = new byte[Config.BUFFER_SIZE];
+		}
+	}
 	
 	public void println_debug(String str)
 	{
@@ -103,7 +120,7 @@ public class Client extends Player {
 		// System.out.println("CreateGroundItem "+itemID+" "+(itemX - 8 *
 		// mapRegionX)+","+(itemY - 8 * mapRegionY)+" "+itemAmount);
 	}
-	
+	private IoSession session;
 	public void removeGroundItem(int itemX, int itemY, int itemID) {
 		// Phate: remoevs an item from absolute X and Y
 		outStream.createFrame(85); // Phate: Item Position Frame
@@ -521,6 +538,18 @@ public int[] QuestInterface =
 
 
 	// writes any data in outStream to the relaying buffer
+	public void flushOutStream() {	
+		if(disconnected || outStream.currentOffset == 0) return;
+		synchronized(this) {	
+			StaticPacketBuilder out = new StaticPacketBuilder().setBare(true);
+			byte[] temp = new byte[outStream.currentOffset]; 
+			System.arraycopy(outStream.buffer, 0, temp, 0, temp.length);
+			out.addBytes(temp);
+			session.write(out.toPacket());
+			outStream.currentOffset = 0;
+		}
+		}
+	/*
 public void flushOutStream() {
 	if(disconnected || outStream.currentOffset == 0) return;
 
@@ -539,7 +568,7 @@ public void flushOutStream() {
 		outStream.currentOffset = 0;
 	}
 	 }
-
+*/
 	// two methods that are only used for login procedure
 	/*private void directFlushOutStream() throws java.io.IOException
 	{
@@ -4050,10 +4079,6 @@ PlayerHandler.messageToAll =("(worldscape) is a rule breaker, everyone watch him
 	}
 	public boolean isFirstNPCp = true;
 	
-	public synchronized Stream getOutStream() {
-		return outStream;
-	}
-	
 	public void closeAllWindows() {
 		//synchronized(c) {
 			if(getOutStream() != null && this != null) {
@@ -4081,21 +4106,34 @@ PlayerHandler.messageToAll =("(worldscape) is a rule breaker, everyone watch him
 		}
 	}
 
-	private static final int[] packetSizes = { 
-		0, 0, 0, 1, -1, 0, 0, 0, 0,
-		0, 0, 0, 0, 0, 8, 0, 6, 2, 2, 0, 0, 2, 0, 6, 0, 12, 0, 0, 0, 0, 0,
-		0, 0, 0, 0, 8, 4, 0, 0, 2, 2, 6, 0, 6, 0, -1, 0, 0, 0, 0, 0, 0, 0,
-		12, 0, 0, 0, 8, 8, 0, 8, 8, 0, 0, 0, 0, 0, 0, 0, 0, 6, 0, 2, 2, 8,
-		6, 0, -1, 0, 6, 0, 0, 0, 0, 0, 1, 4, 6, 0, 0, 0, 0, 0, 0, 0, 3, 0,
-		0, -1, 0, 0, 13, 0, -1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 6,
-		0, 0, 1, 0, 6, 0, 0, 0, -1, 0, 2, 6, 0, 4, 6, 8, 0, 6, 0, 0, 0, 2,
-		0, 0, 0, 0, 0, 6, 0, 0, 0, 0, 0, 0, 1, 2, 0, 2, 6, 0, 0, 0, 0, 0,
-		0, 0, -1, -1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 8, 0, 3,
-		0, 2, 0, 0, 8, 1, 0, 0, 12, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0,
-		0, 0, 4, 0, 4, 0, 0, 0, 7, 8, 0, 0, 10, 0, 0, 0, 0, 0, 0, 0, -1, 0,
-		6, 0, 1, 0, 0, 0, 6, 0, 6, 8, 1, 0, 0, 4, 0, 0, 0, 0, -1, 0, -1, 4,
-		0, 0, 6, 6, -1, 0, 0 
-		};
+	public static final int PACKET_SIZES[] = {
+		0, 0, 0, 1, -1, 0, 0, 0, 0, 0, //0
+		0, 0, 0, 0, 8, 0, 6, 2, 2, 0,  //10
+		0, 2, 0, 6, 0, 12, 0, 0, 0, 0, //20
+		0, 0, 0, 0, 0, 8, 4, 0, 0, 2,  //30
+		2, 6, 0, 6, 0, -1, 0, 0, 0, 0, //40
+		0, 0, 0, 12, 0, 0, 0, 8, 8, 12, //50
+		8, 8, 0, 0, 0, 0, 0, 0, 0, 0,  //60
+		6, 0, 2, 2, 8, 6, 0, -1, 0, 6, //70
+		0, 0, 0, 0, 0, 1, 4, 6, 0, 0,  //80
+		0, 0, 0, 0, 0, 3, 0, 0, -1, 0, //90
+		0, 13, 0, -1, 0, 0, 0, 0, 0, 0,//100
+		0, 0, 0, 0, 0, 0, 0, 6, 0, 0,  //110
+		1, 0, 6, 0, 0, 0, -1, 0, 2, 6, //120
+		0, 4, 6, 8, 0, 6, 0, 0, 0, 2,  //130
+		0, 0, 0, 0, 0, 6, 0, 0, 0, 0,  //140
+		0, 0, 1, 2, 0, 2, 6, 0, 0, 0,  //150
+		0, 0, 0, 0, -1, -1, 0, 0, 0, 0,//160
+		0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  //170
+		0, 8, 0, 3, 0, 2, 0, 0, 8, 1,  //180
+		0, 0, 12, 0, 0, 0, 0, 0, 0, 0, //190
+		2, 0, 0, 0, 0, 0, 0, 0, 4, 0,  //200
+		4, 0, 0, 0, 7, 8, 0, 0, 10, 0, //210
+		0, 0, 0, 0, 0, 0, -1, 0, 6, 0, //220
+		1, 0, 0, 0, 6, 0, 6, 8, 1, 0,  //230
+		0, 4, 0, 0, 0, 0, -1, 0, -1, 4,//240
+		0, 0, 6, 6, 0, 0, 0            //250
+	};
 
 
 	/*public static final int packetSizes[] = {
@@ -4360,7 +4398,7 @@ ServerHelpMenu();
 				packetType = in.read() & 0xff;
 				if(inStreamDecryption != null)
 					packetType = packetType - inStreamDecryption.getNextKey() & 0xff;
-				packetSize = packetSizes[packetType];
+				packetSize = PACKET_SIZES[packetType];
 				avail--;                    //----------------end actionNames!---------------\\
             }
 			if(packetSize == -1) {
@@ -4376,7 +4414,7 @@ ServerHelpMenu();
 			fillInStream(packetSize);
             timeOutCounter = 0;			// reset
 
-			IOPackets.parseIncomingPackets(this);		// method that does actually interprete these packets
+			//IOPackets.parseIncomingPackets(this);		// method that does actually interprete these packets
 
 			packetType = -1;
 		} catch(java.lang.Exception __ex) {
@@ -4390,6 +4428,66 @@ ServerHelpMenu();
 	public synchronized Stream getInStream() {
 		return inStream;
 	}
+	
+	public synchronized int getPacketType() {
+		return packetType;
+	}
+	
+	public synchronized int getPacketSize() {
+		return packetSize;
+	}
+	
+	public synchronized Stream getOutStream() {
+		return outStream;
+	}
+	
+	public void queueMessage(Packet arg1) {
+		synchronized(queuedPackets) {
+			//if (arg1.getId() != 41)
+				queuedPackets.add(arg1);
+			//else
+				//processPacket(arg1);
+		}
+	}
+	
+	public synchronized boolean processQueuedPackets() {
+		Packet p = null;
+		synchronized(queuedPackets) {
+			p = queuedPackets.poll();
+		}
+		if(p == null) {
+			return false;
+		}
+		inStream.currentOffset = 0;
+		packetType = p.getId();
+		packetSize = p.getLength();
+		inStream.buffer = p.getData();
+		if(packetType > 0) {
+			//sendMessage("PacketType: " + packetType);
+			IOPackets.processPacket(this, packetType, packetSize);
+		}
+		timeOutCounter = 0;
+		return true;
+	}
+	
+	public synchronized boolean processPacket(Packet p) {
+		synchronized (this) {
+			if(p == null) {
+				return false;
+			}
+			inStream.currentOffset = 0;
+			packetType = p.getId();
+			packetSize = p.getLength();
+			inStream.buffer = p.getData();
+			if(packetType > 0) {
+				//sendMessage("PacketType: " + packetType);
+				IOPackets.processPacket(this, packetType, packetSize);
+			}
+			timeOutCounter = 0;
+			return true;
+		}
+	}
+		
 	 // private int somejunk;
 
 	public PlayerSave loadGame(String playerName, String playerPass)
